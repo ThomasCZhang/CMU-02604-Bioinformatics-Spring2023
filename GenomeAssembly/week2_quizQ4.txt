@@ -1,0 +1,31 @@
+CAAATGCATCATACGCTCACCCAG
+CAAA
+ AAAT
+  AATG
+   ATGC
+    TGCA
+     GCAT
+      CATC
+       ATCA
+        TCAT
+         CATA
+          ATAC
+           TACG
+            ACGC
+             CGCT
+              GCTC
+               CTCA
+                TCAC
+                 CACC
+                  ACCC
+                   CCCA
+                    CCAG 
+
+
+
+
+
+
+
+
+

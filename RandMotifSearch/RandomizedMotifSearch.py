@@ -78,7 +78,7 @@ def SingleRandomizedMotifSearch(Dna: list[str], k: int, t: int) -> tuple[list[st
     """
     BestMotifs = ChooseRandomMotifs(Dna, k)
     while True:
-        Profile = CreateProfile(BestMotifs, k)
+        Profile = CreateProfile(BestMotifs)
         Motifs = FindMostProbableMotifs(Dna, k, Profile)
         if Score(Motifs) < Score(BestMotifs):
             BestMotifs = Motifs
@@ -104,7 +104,7 @@ def ChooseRandomMotifs(Dna: list[str], k: int) -> list[str]:
     return Motifs
 
 
-def CreateProfile(Motifs: list[str], k: int) -> list[dict[str, int]]:
+def CreateProfile(Motifs: list[str]) -> list[dict[str, int]]:
     """
     CreateProfile: Creates a profile matrix based on a list of motifs.\n
     Input:\n

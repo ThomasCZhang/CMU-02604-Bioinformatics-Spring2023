@@ -22,6 +22,9 @@ def main():
 
 
 def DeBruijnKmers(k_mers: list[str]) -> dict[str, list[str]]:
+    """
+    Creates an adjacency dict for the DebruijnKmers graph based on a list of k mers.
+    """
     AdjacencyDict = {}
     for Kmer in k_mers:
         Key = Kmer[:-1]
