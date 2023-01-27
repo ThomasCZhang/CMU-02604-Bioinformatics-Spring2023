@@ -19,25 +19,28 @@ def main():
 def ReadTestFiles_RandomizedMotifSearch(filepath: str) -> tuple[int, int, list[dict[str, float]]]:
     """
     ReadData(): Reads data from a .txt file and formats that data for RandomizedMotifSearch.
-    .txt Format should be as follows:\n
+    .txt Format should be as follows:
     Line 1: Two integers separated by a space. The first number is the  length of k-mers. The second is the number of
-    DNA sequences.\n
+    DNA sequences.
     Line 2: The DNA sequences separated by spaces.
-    Input:\n
-    filepath (string): The path to the .txt file.\n
-    Output:\n
-    k (int): the number of letters in the motif.\n
-    t (int): the number of sequences.\n
-    Dna: (list of strings): the scoring profile for the motifs.
+
+    Input:
+        filepath (string): The path to the .txt file.
+    
+    Output:
+        k (int): the number of letters in the motif.
+        
+        t (int): the number of sequences.
+        
+        Dna: (list of strings): the scoring profile for the motifs.
     """
     with open(filepath) as f:
         Dna = []
         for ind, line in enumerate(f):
+            string = line.strip()
             if ind == 0:
-                string = line.strip()
                 k, t = [int(x) for x in string.split(" ")]
             else:
-                string = line.strip()
                 Dna.extend(string.split(" "))
     return (k, t, Dna)
 
@@ -45,14 +48,20 @@ def ReadTestFiles_RandomizedMotifSearch(filepath: str) -> tuple[int, int, list[d
 def RandomizedMotifSearch(Dna: list[str], k: int, t: int) -> list[str]:
     """
     RandomizedMotifSearch(Dna, k, t): Finds the optimal k-length motifs from t Dna sequences by running
-    RandomizedMotifSearch many times.\n
-    Input:\n
-    Iterations (int): The number of times to run RandomizedMotifSearch
-    Dna (list of str): DNA sequences to find motifs from.\n
-    k (int): the length of the motifs.\n
-    t (int): the number of DNA sequences.\n
-    Output:\n
-    BestMotifs (list of str): The best motifs. 
+    RandomizedMotifSearch many times.
+    
+    Input:
+        Iterations (int): The number of times to run RandomizedMotifSearch
+
+        Dna (list of str): DNA sequences to find motifs from.
+
+        k (int): the length of the motifs.
+
+        t (int): the number of DNA sequences.
+
+    Output:
+
+        BestMotifs (list of str): The best motifs. 
     """
     Iterations = 1000
     BestMotifs = ["" for i in range(t)]
@@ -67,14 +76,19 @@ def RandomizedMotifSearch(Dna: list[str], k: int, t: int) -> list[str]:
 
 def SingleRandomizedMotifSearch(Dna: list[str], k: int, t: int) -> tuple[list[str], int]:
     """
-    SingleRandomizedMotifSearch(Dna, k, t): Finds the optimal k-length motifs from t Dna sequences.\n
-    Input:\n
-    Dna (list of str): DNA sequences to find motifs from.\n
-    k (int): the length of the motifs.\n
-    t (int): the number of DNA sequences.\n
-    Output:\n
-    BestMotifs (list of str): The best motifs. \n
-    BestScore (float): The best score.
+    SingleRandomizedMotifSearch(Dna, k, t): Finds the optimal k-length motifs from t Dna sequences.
+
+    Input:
+        Dna (list of str): DNA sequences to find motifs from.
+
+        k (int): the length of the motifs.
+        
+        t (int): the number of DNA sequences.
+        
+    Output:
+        BestMotifs (list of str): The best motifs. 
+        
+        BestScore (float): The best score.
     """
     BestMotifs = ChooseRandomMotifs(Dna, k)
     while True:
@@ -89,12 +103,15 @@ def SingleRandomizedMotifSearch(Dna: list[str], k: int, t: int) -> tuple[list[st
 
 def ChooseRandomMotifs(Dna: list[str], k: int) -> list[str]:
     """
-    ChooseRandommotifs(Dna): Chooses random motifs from a list of DNA sequences.\n
-    Input:\n
-    Dna (list of strings): List of DNA sequences.\n
-    k (int): The length of the motifs.\n
-    Output:\n
-    Motifs (list of strings): List of motifs
+    ChooseRandommotifs(Dna): Chooses random motifs from a list of DNA sequences.
+    
+    Input:        
+        Dna (list of strings): List of DNA sequences.
+        
+        k (int): The length of the motifs.
+    Output:
+        
+        Motifs (list of strings): List of motifs
     """
     Motifs = ["" for i in range(len(Dna))]
     for i, Sequence in enumerate(Dna):
@@ -106,12 +123,14 @@ def ChooseRandomMotifs(Dna: list[str], k: int) -> list[str]:
 
 def CreateProfile(Motifs: list[str]) -> list[dict[str, int]]:
     """
-    CreateProfile: Creates a profile matrix based on a list of motifs.\n
-    Input:\n
-    Motifs (list of strings): The list of motifs used to generate the profile matrix.\n
-    k (int): length of the motifs.\n
-    Output:\n
-    Profile (list of dictionaries(string to int)): The profile matrix represented as a list of dictionaries.
+    CreateProfile: Creates a profile matrix based on a list of motifs.
+
+    Input:
+        Motifs (list of strings): The list of motifs used to generate the profile matrix.
+    
+        k (int): length of the motifs.
+    Output:
+        Profile (list of dictionaries(string to int)): The profile matrix represented as a list of dictionaries.
     """
     Pseudocount = 1
     Profile = CountLettersAtEachPosition(Motifs)
@@ -129,12 +148,15 @@ def CreateProfile(Motifs: list[str]) -> list[dict[str, int]]:
 def InitializeProfileWithPseudoCounts(PseudocountValue: float, k: int) -> list[dict[str, int]]:
     """
     InitializeProfileWithPseduoCounts(): Creates a profile matrix (represented as a list of dictionaries of string
-    to int) with pseudo counts.\n
-    Input:\n
-    PsuedocountValue (float): value to use as pseudocount for profile matrix.\n
-    k (int): the length of the k-mers.
-    Output:\n
-    Profile (list of dictionaries(string to int)): The initialized profile matrix.
+    to int) with pseudo counts.
+    
+    Input:
+        PsuedocountValue (float): value to use as pseudocount for profile matrix.
+        
+        k (int): the length of the k-mers.
+    
+    Output:
+        Profile (list of dictionaries(string to int)): The initialized profile matrix.
     """
     Profile = [{} for i in range(k)]
     for i in range(k):
@@ -148,13 +170,17 @@ def InitializeProfileWithPseudoCounts(PseudocountValue: float, k: int) -> list[d
 def FindMostProbableMotifs(Dna: list[str], k: int, Profile: list[dict[str, int]]) -> list[str]:
     """
     FindMostProbableMotifs(Dna, k, Profile): Find the most probable k-length motifs from a list of Dna sequences using
-    Profile.\n
-    Input:\n
-    Dna (list of strings): The list of Dna sequences.\n
-    k (int): The length of the motifs. \n
-    Profile (list of dictionaries(string to int)): The Profile matrix used to find the most likely motifs.\n
-    Output:\n
-    BestMotifs (list of strings): The best motifs based on the profile matrix.
+    Profile.
+
+    Input:
+        Dna (list of strings): The list of Dna sequences.
+        
+        k (int): The length of the motifs. 
+        
+        Profile (list of dictionaries(string to int)): The Profile matrix used to find the most likely motifs.
+
+    Output:
+        BestMotifs (list of strings): The best motifs based on the profile matrix.
     """
     BestMotifs = ["" for i in range(len(Dna))]
     for i, Text in enumerate(Dna):
@@ -164,12 +190,15 @@ def FindMostProbableMotifs(Dna: list[str], k: int, Profile: list[dict[str, int]]
 
 def Score(Motifs: list[str]) -> float:
     """
-    Score(Motifs, Profile). Scores a list of motifs according to a profile.\n
-    Input:\n
-    Motifs (list of strings): Motifs to be scored.\n
-    Profile (list of dictionaries(string to int). Profile used to score the motifs.\n
-    Output:\n
-    FinalScore (float): The score of the motifs.
+    Score(Motifs, Profile). Scores a list of motifs according to a profile.
+
+    Input:
+        Motifs (list of strings): Motifs to be scored.
+        
+        Profile (list of dictionaries(string to int). Profile used to score the motifs.
+    
+    Output:
+        FinalScore (float): The score of the motifs.
     """
     FinalScore = 0
     CountProfile = CountLettersAtEachPosition(Motifs)
@@ -184,11 +213,13 @@ def Score(Motifs: list[str]) -> float:
 
 def CountLettersAtEachPosition(Motifs: list[str]) -> list[dict[str, int]]:
     """
-    Counts the number of times a letter appears in each position of the motifs.\n
-    Input: \n
-    Motifs (list of strings): The motifs being analyzed.\n
-    Output: \n
-    Counts (list[dict[str, int]]): The number of times a letter appears in a position for a collection of motifs.
+    Counts the number of times a letter appears in each position of the motifs.
+
+    Input:
+        Motifs (list of strings): The motifs being analyzed.
+    
+    Output: 
+        Counts (list[dict[str, int]]): The number of times a letter appears in a position for a collection of motifs.
     """
     k = len(Motifs[0])
     Counts = [{"A": 0, "C": 0, "G": 0, "T": 0,} for i in range(k)]
@@ -199,11 +230,12 @@ def CountLettersAtEachPosition(Motifs: list[str]) -> list[dict[str, int]]:
 
 def FindMaxKey(Dictionary: dict[str, int]) -> str:
     """
-    Returns the key containing the max value in a dictionary of strings to ints.\n
-    Input:\n
-    Dictionary (dictionary of string to int): The dictionary being analyzed.\n
-    Output:\n
-    MaxKey (str): The key of the max value in Dictionary.
+    Returns the key containing the max value in a dictionary of strings to ints.
+
+    Input:
+        Dictionary (dictionary of string to int): The dictionary being analyzed.
+    Output:
+        MaxKey (str): The key of the max value in Dictionary.
     """
     MaxKey = list(Dictionary.keys())[0]
     for Key in Dictionary:
@@ -213,10 +245,12 @@ def FindMaxKey(Dictionary: dict[str, int]) -> str:
 
 def AddConstantToDictionaryValues(Constant: float, Dictionary: dict[str, int]):
     """
-    Adds some constant value to all values in a Dictionary of strings to ints.\n
-    Input:\n
-    Constant (float): The value being added to all elements in the dictionary.\n
-    Dictionary (dictionary of strings to ints): The dictionary being modified.
+    Adds some constant value to all values in a Dictionary of strings to ints.
+
+    Input:
+        Constant (float): The value being added to all elements in the dictionary.\n
+        
+        Dictionary (dictionary of strings to ints): The dictionary being modified.
     """
     for Key in Dictionary:
         Dictionary[Key] += Constant

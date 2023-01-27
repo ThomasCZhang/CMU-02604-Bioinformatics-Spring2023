@@ -1,6 +1,10 @@
 from RandomizedMotifSearch import *
 
 def CreateHiddenMatrix(Dna, Profile) -> list[list[float]]:
+    """
+    CreateHiddenMatrix Creates a hidden matrix from a list of Dna strings and a
+    Profile matrix.
+    """
     k = len(Profile)
     n = len(Dna)
     HiddenMatrix = [[] for i in Dna]

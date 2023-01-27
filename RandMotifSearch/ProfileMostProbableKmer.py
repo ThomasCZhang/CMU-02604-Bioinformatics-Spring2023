@@ -16,16 +16,20 @@ def main():
 def ReadTestFiles_ProfileMostProbableKmer(filepath: str) -> tuple[str, int, list[dict[str, float]]]:
     """
     ReadData(): Reads data from a .txt file and formats that data for ProfileMostProbableKmer.
-    .txt Format should be as follows:\n
-    Line 1: string of "A", "T", "C", "G".\n
-    Line 2: an integer (value of k).\n
-    Line 3 to Line 6: A, C, G, T profiles (in that order).\n
-    Input:\n
-    filepath (string): The path to the .txt file.\n
-    Output:\n
-    Text (string): the text from which to find the best motif.\n
-    k (int): the number of letters in the motif.\n
-    Profile: (list of dictionaries): the scoring profile for the motifs.
+    .txt Format should be as follows:
+    Line 1: string of "A", "T", "C", "G".
+    Line 2: an integer (value of k).
+    Line 3 to Line 6: A, C, G, T profiles (in that order).
+    
+    Input:
+        filepath (string): The path to the .txt file.
+    
+    Output:
+        Text (string): the text from which to find the best motif.
+        
+        k (int): the number of letters in the motif.
+        
+        Profile: (list of dictionaries): the scoring profile for the motifs.
     """
     switchDict = {
         0: "A",
@@ -51,13 +55,17 @@ def ReadTestFiles_ProfileMostProbableKmer(filepath: str) -> tuple[str, int, list
 
 def ProfileMostProbableKmer(Text: str, k: int, Profile: list[dict[str, float]]) -> str:
     """
-    Takes a Text (string), a number k (int), and a 4 by k matrix profile (numpy matrix).\n
-    Input:\n
-    Text (string): The string from which to find the best motif.\n
-    k (int): The number of letters in the motif.\n
-    Profile (list of dictionaries): The scoring matrix.\n
-    Output:\n
-    bestMotif (string): The best motif.
+    Takes a Text (string), a number k (int), and a 4 by k matrix profile (numpy matrix).
+
+    Input:
+        Text (string): The string from which to find the best motif.
+        
+        k (int): The number of letters in the motif.
+        
+        Profile (list of dictionaries): The scoring matrix.
+    
+    Output:
+        bestMotif (string): The best motif.
     """
     # For i from 0 to last starting position
     #   score the k-mer starting from position i in Text using the scoring matrix "Profile"
@@ -74,12 +82,15 @@ def ProfileMostProbableKmer(Text: str, k: int, Profile: list[dict[str, float]]) 
 
 def ScoreKMer(motif: str, Profile: list[dict[str, float]]) -> float:
     """
-    ScoreKmer() Takes a string of length k and then scores it using a 4 by k matrix Profile.\n
-    Input:\n
-    motif (string): The string to be scored.\n
-    Profile (list of dictionaries): The matrix profile used to score the string.\n
-    Output:\n
-    score (float): The score of the motif (value should be between 0 and 1).
+    ScoreKmer() Takes a string of length k and then scores it using a 4 by k matrix Profile.
+
+    Input:
+        motif (string): The string to be scored.
+        
+        Profile (list of dictionaries): The matrix profile used to score the string.
+    
+    Output:
+        score (float): The score of the motif (value should be between 0 and 1).
     """
     for index, element in enumerate(motif):
         if index == 0:
