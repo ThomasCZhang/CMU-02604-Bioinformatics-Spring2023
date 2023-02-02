@@ -1,3 +1,0 @@
-TTC :  TCT TCT
-GGC :  GCT GCT
-AAG :  AGT

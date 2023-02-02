@@ -7,17 +7,15 @@ def main():
     filepaths = glob(dirpath + "\\input_1.txt")
     G = ReadTests_Eulerian(filepaths[0])
     # eulerian_cycle = EulerianCycle(G)
-    # eulerian_path = EulerianPath(G)
-    test = [1,2,3]
-    print(test[2:-1]+test[:2])
+    answer = EulerianPath(G)
     
-    # answer_path = os.path.join(os.path.dirname(__file__), "eulerian_answer.txt")
-    # with open(answer_path, 'w') as f:
-    #     for ind, ele in enumerate(eulerian_cycle):
-    #         if ind == 0:
-    #             f.write(str(ele))
-    #         else:
-    #             f.write(" " + str(ele))
+    answer_path = os.path.join(os.path.dirname(__file__), "eulerian_answer.txt")
+    with open(answer_path, 'w') as f:
+        for ind, ele in enumerate(answer):
+            if ind == 0:
+                f.write(str(ele))
+            else:
+                f.write(" " + str(ele))
 
 def ReadTests_Eulerian(FilePath: str) -> dict[int, int]:
     EdgeDict = {}
@@ -55,7 +53,18 @@ def EulerianCycle(G: dict[int, list[int]]) -> list[int]:
     return path
 
 def EulerianPath(G: dict[int, list[int]]) -> list[int]:
+    """
+    EulerianPath finds the eulerian path in a graph.
+    
+    Input:
+        G : A graph containing a eulerian path. Represented as a dictionary of edges.
+
+    Output:
+        path: The eulerian path, as a list of vertices.
+    """
     in_out_degree = InOutDegree(G)
+
+    # Finding the starting and ending vertex
     num_unbalanced = 0
     for key in in_out_degree:
         if in_out_degree[key] == -1:
@@ -67,17 +76,20 @@ def EulerianPath(G: dict[int, list[int]]) -> list[int]:
     if num_unbalanced > 2:
         print("Warning: Graph does not have Eulerian Path.")
     
+    # Adding an edge so we make the graph contain eulerian cycle.
     if end_vertex in G:
         G[end_vertex].append(start_vertex)
     else:
         G[end_vertex] = [start_vertex]
 
-    eulerian_cycle = EulerianCycle(G)
-    for index, val in enumerate(eulerian_cycle):
-        next_val = eulerian_cycle[index+1]
+    cycle = EulerianCycle(G)
+    for index, val in enumerate(cycle[:-1]):
+        next_val = cycle[index+1]
         if (val == end_vertex) and (next_val == start_vertex):
-            pass
+            path = cycle[index+1:-1]+cycle[:index+1]
+            return path
 
+    print("Something broke if this prints.")
         
 def InOutDegree(G: dict[int, list[int]]) -> dict[int, int]:
     degrees = {}
