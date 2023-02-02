@@ -4,7 +4,7 @@ from glob import glob
 def main():
     dirpath = os.path.join(os.path.dirname(__file__),
                            "Files\\inputs\\EulerianPath")
-    filepaths = glob(dirpath + "\\input_1.txt")
+    filepaths = glob(dirpath + "\\data*.txt")
     G = ReadTests_Eulerian(filepaths[0])
     # eulerian_cycle = EulerianCycle(G)
     answer = EulerianPath(G)
