@@ -6,10 +6,15 @@ from GenomePath import *
 
 def main():
     dirpath = os.path.join(os.path.dirname(__file__), "Files\\inputs\\Reconstruction")
-    FilePaths = glob(dirpath + "\\input*.txt")
+    FilePaths = glob(dirpath + "\\data*.txt")
     for Path in FilePaths:
-        Kmers = ReadTests_DeBruijnKmers(Path)
-        AdjacencyDict = DeBruijnKmers(Kmers)
+        k, patterns = ReadTest_StringReconstruction(Path)
+        Text = StringReconstruction(patterns)
+    
+    answer_path = os.path.join(os.path.dirname(__file__), "Reconstruction.txt")
+    with open(answer_path, 'w') as f:
+        f.write(Text)
+    
 
 def StringReconstruction(Patterns: list[str]) -> str:
     dB = DeBruijnKmers(Patterns)
