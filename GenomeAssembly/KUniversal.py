@@ -23,12 +23,30 @@ def ReadTest_K_Universe(filepath: str) -> int:
     return k
 
 def KUniversalString(k: int) -> str:
-    patterns = GenerateKMers(k)
+    """
+    Generates the K-universal string.
+
+    Input:
+        k : The length of each kmer.
+    
+    Output:
+        Text: the universal string.
+    """
+    patterns = GenerateBinaryKMers(k)
     Text = StringReconstruction(patterns)
     Text = Text[:len(Text)+1-k]
     return Text
 
-def GenerateKMers(K: int) -> list[str]:
+def GenerateBinaryKMers(K: int) -> list[str]:
+    """
+    GenerateKMers generates all binary kmers of length k.
+
+    Input:
+        K : The length of each k-mer.
+    
+    Output:
+        kmers : The list of k-mers.
+    """
     kmers = []
     for i in range(2**K):
         kmers.append(f"{i:0{K}b}")

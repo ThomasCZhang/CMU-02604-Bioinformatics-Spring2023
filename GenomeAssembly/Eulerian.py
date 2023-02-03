@@ -62,7 +62,15 @@ def EulerianPath(G: dict[int, list[int]]) -> list[int]:
     Output:
         path: The eulerian path, as a list of vertices.
     """
-    in_out_degree = InOutDegree(G)
+    in_degree, out_degree = InOutDegree(G)
+    in_out_degree = {}
+    for key in in_degree:
+        in_out_degree[key] = in_degree[key]
+    for key in out_degree:
+        if key in in_out_degree:
+            in_out_degree[key] -= out_degree[key]
+        else:
+            in_out_degree[key] = -out_degree[key]
 
     # Finding the starting and ending vertex
     num_unbalanced = 0
@@ -77,33 +85,45 @@ def EulerianPath(G: dict[int, list[int]]) -> list[int]:
         print("Warning: Graph does not have Eulerian Path.")
     
     # Adding an edge so we make the graph contain eulerian cycle.
-    if end_vertex in G:
-        G[end_vertex].append(start_vertex)
-    else:
-        G[end_vertex] = [start_vertex]
+    if num_unbalanced == 2:
+        if end_vertex in G:
+            G[end_vertex].append(start_vertex)
+        else:
+            G[end_vertex] = [start_vertex]
 
     cycle = EulerianCycle(G)
-    for index, val in enumerate(cycle[:-1]):
-        next_val = cycle[index+1]
-        if (val == end_vertex) and (next_val == start_vertex):
-            path = cycle[index+1:-1]+cycle[:index+1]
-            return path
+    if num_unbalanced == 2:
+        for index, val in enumerate(cycle[:-1]):
+            next_val = cycle[index+1]
+            if (val == end_vertex) and (next_val == start_vertex):
+                path = cycle[index+1:-1]+cycle[:index+1]
+                return path
+    else:
+        return cycle
 
     print("Something broke if this prints.")
         
-def InOutDegree(G: dict[int, list[int]]) -> dict[int, int]:
-    degrees = {}
+def InOutDegree(G: dict[int, list[int]]) -> tuple[dict[int, int], dict[int, int]]:
+    in_degree = {}
+    out_degree = {}
     for key in G:
         for val in G[key]:
-            if key in degrees:
-                degrees[key] -= 1
+            if key in out_degree:
+                out_degree[key] += 1
             else:
-                degrees[key] = -1
-            if val in degrees:
-                degrees[val] += 1
+                out_degree[key] = 1
+            
+            if val in in_degree:
+                in_degree[val] += 1
             else:
-                degrees[val] = 1
-    return degrees
+                in_degree[val] = 1
+
+            if key not in in_degree:
+                in_degree[key] = 0
+            if val not in out_degree:
+                out_degree[val] = 0
+                
+    return in_degree, out_degree
 
 
 if __name__ == "__main__":

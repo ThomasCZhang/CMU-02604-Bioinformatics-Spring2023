@@ -1,9 +1,6 @@
 import os
 from glob import glob
-from DeBruijnKmers import *
 from Eulerian import *
-from GenomePath import *
-from StringReconstruction import *
 
 def main():
     dirpath = os.path.join(os.path.dirname(__file__),
@@ -25,6 +22,16 @@ def main():
             
 
 def MaximalNonBranchingPaths(G: dict[int, list[int]]) -> list[list[int]]:
+    """
+    MaximalNonBranchingPaths finds all the non-branching paths in a graph and returns those paths in a list.
+    Each path is represented as a list of vertices.
+
+    Input:
+        G : The graph represented as an adjacency dictionary.
+    
+    Output:
+        paths : The non-branching paths in a list. Each path is a list of vertices.
+    """
     traveled = {}
     in_degree, out_degree = InOutDegree(G)
     paths = []

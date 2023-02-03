@@ -14,11 +14,13 @@ def GenomePath(path: list[str]) -> str:
     """
     Takes a sequence path of k-mers Pattern1, … ,Patternn such that the last k - 1 symbols of Pattern_i are equal 
     to the first k-1 symbols of Pattern_i+1 for 1 ≤ i ≤ n-1. Returns a string of Text of length k+n-1 such that the 
-    it-th k-mer in Text is equal to Pattern_i (for 1 ≤ i ≤ n).\n
-    Input: \n
-    path (list[str]): the list of patterns.\n
-    Output:\n
-    FinalString (str): the final string of text
+    it-th k-mer in Text is equal to Pattern_i (for 1 ≤ i ≤ n).
+
+    Input: 
+        path : the list of patterns.\n
+    
+    Output:
+        FinalString : the final string of text
     """
     k = len(path[0])
     FinalString = ""
