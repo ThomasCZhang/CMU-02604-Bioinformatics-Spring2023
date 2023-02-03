@@ -7,11 +7,10 @@ from StringReconstruction import *
 
 def main():
     dirpath = os.path.join(os.path.dirname(__file__), "Files\\inputs\\KUniverse")
-    FilePaths = glob(dirpath + "\\input*.txt")
+    FilePaths = glob(dirpath + "\\data*.txt")
     for Path in FilePaths:
         k= ReadTest_K_Universe(Path)
-        patterns = GenerateKMers(k)
-        Text = StringReconstruction(patterns)
+        Text = KUniversalString(k)
     
     answer_path = os.path.join(os.path.dirname(__file__), "KUniverse.txt")
     with open(answer_path, 'w') as f:
@@ -20,8 +19,14 @@ def main():
 
 def ReadTest_K_Universe(filepath: str) -> int:
     with open(filepath) as f:
-        k = f.readline().strip()
+        k = int(f.readline().strip())
     return k
+
+def KUniversalString(k: int) -> str:
+    patterns = GenerateKMers(k)
+    Text = StringReconstruction(patterns)
+    Text = Text[:len(Text)+1-k]
+    return Text
 
 def GenerateKMers(K: int) -> list[str]:
     kmers = []
