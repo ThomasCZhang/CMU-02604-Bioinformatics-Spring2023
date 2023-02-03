@@ -18,12 +18,16 @@ def main():
                 f.write(" "+Text)
             f.write("\n")
 
-# Insert your DeBruijnKmers function here, along with any subroutines you need
-
-
 def DeBruijnKmers(k_mers: list[str]) -> dict[str, list[str]]:
     """
     Creates an adjacency dict for the DebruijnKmers graph based on a list of k mers.
+
+    Input:
+        k_mers : A list of k-mers.
+    
+    Output:
+        AdjacencyDict : The adjacency list of the DeBruijn graph formed from k_mers.
+        Adjacency list is represented as a dictionary.
     """
     AdjacencyDict = {}
     for Kmer in k_mers:
