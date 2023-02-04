@@ -17,6 +17,15 @@ def main():
     
 
 def StringReconstruction(Patterns: list[str]) -> str:
+    """
+    StringReconstruction reconstructs a string from a list of k-mers.
+
+    Input:
+        Patterns: The list of k-mers.
+    
+    Output:
+        Text: The reconstructed string.
+    """
     dB = DeBruijnKmers(Patterns)
     path = EulerianPath(dB)
     Text = GenomePath(path)

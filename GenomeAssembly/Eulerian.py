@@ -30,8 +30,12 @@ def ReadTests_Eulerian(FilePath: str) -> dict[int, int]:
 def EulerianCycle(G: dict[int, list[int]]) -> list[int]:
     """
     Takes a graph containing an Eulerian cycle and returns the path of a eulerian cycle.
-    G (dict[int, list[int]]): A dictionary of edges. Keys are a vertex. Values are list of vertices that edge connects 
-    to.
+    
+    Input:
+        G: A dictionary of edges. Keys are a vertex. Values are list of vertices that edge connects to.
+    
+    Output:
+        path: A list of vertices corresponding to the eulerian cycle path.
     """
     num_edges = 0
     for key in G:
@@ -104,6 +108,15 @@ def EulerianPath(G: dict[int, list[int]]) -> list[int]:
     print("Something broke if this prints.")
         
 def InOutDegree(G: dict[int, list[int]]) -> tuple[dict[int, int], dict[int, int]]:
+    """
+    InOutDegree: Determines the in and out degrees of all vertices in a graph.
+
+    Input:
+        G: A graph represnted as an adjacency list. The adjacency list is stored as a dictionary.
+
+    Output:
+        in_degree, out_degree: Two dictionaries that store the in and out degrees of each vertex in G.
+    """
     in_degree = {}
     out_degree = {}
     for key in G:
