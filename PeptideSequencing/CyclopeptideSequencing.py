@@ -1,16 +1,25 @@
-from TheoreticalSpectrum import *
+from TheoreticalSpectrum import GenerateAAInfo
+import os
+from glob import glob
 
 def main():
     dirpath = os.path.join(os.path.dirname(__file__),
-                           "Files\Inputs\CyclopeptideSequencing")
-    filepaths = glob(dirpath + "\\input*.txt")
+                           "Files\\Inputs\\CyclopeptideSequencing")
+    filepaths = glob(dirpath + "\\data*.txt")
     for filepath in filepaths:
         spectrum = ReadTestInputs_PeptideEncoding(filepath)
         peptideList = CyclopeptideSequencing(spectrum)
-        massList = PeptideListToMassList(peptideList)
-    
-    print(massList)
-    
+        # massList = PeptideListToMassList(peptideList)
+
+    answerpath = os.path.join(os.path.dirname(__file__), "CyclopeptideSequencing.txt")
+    with open(answerpath, 'w') as f:
+        for idx1, peptide in enumerate(peptideList):
+            if idx1 != 0:
+                f.write(" ")
+            for idx2, mass in enumerate(peptide):
+                if idx2 != 0:
+                    f.write("-")
+                f.write(str(mass))
 
 def ReadTestInputs_PeptideEncoding(FilePath: str) -> list[int]:
     """
@@ -19,20 +28,7 @@ def ReadTestInputs_PeptideEncoding(FilePath: str) -> list[int]:
     """
     with open(FilePath) as f:
         text = [int(i) for i in f.readline().strip().split()]
-
-
     return text
-
-def PeptideListToMassList(PeptideList: list[str]) -> list[list[int]]:
-    amino_acid_mass, _ = GenerateAAInfo()
-    mass_list = []
-    for peptide in PeptideList:
-        peptide_aa_mass = []
-        for aa in peptide:
-            peptide_aa_mass.append(amino_acid_mass[aa])
-        if peptide_aa_mass not in mass_list:
-            mass_list.append(peptide_aa_mass)
-    return mass_list
 
 def CyclopeptideSequencing(spectrum: list[int]) -> list[str]:
     """
@@ -44,32 +40,29 @@ def CyclopeptideSequencing(spectrum: list[int]) -> list[str]:
     Ouput:
         final_peptides: a list of peptides that can generate specturm.
     """
-
-    amino_acid_mass, aa_alphabet = GenerateAAInfo()
-
-    candidate_peptides = set("_")
+    candidate_peptides = [[0]]
     final_peptides = []
     while candidate_peptides:
         candidate_peptides = ExpandPeptide(candidate_peptides)
         remove_list = []
-        for peptide in candidate_peptides:
-            peptide_spectrum = LinearSpectrum(peptide, aa_alphabet, amino_acid_mass)
+        for ind, peptide in enumerate(candidate_peptides):
+            peptide_spectrum = LinearSpectrumMass(peptide)
             if CalculatePeptideMass(peptide) == ParentMass(spectrum):
-                peptide_spectrum = CycloSpectrum(peptide, aa_alphabet, amino_acid_mass)
+                peptide_spectrum = CycloSpectrumMass(peptide)
                 if CheckSpectrumCompatibility(peptide_spectrum, spectrum) and (peptide not in final_peptides):
                     final_peptides.append(peptide)
-                remove_list.append(peptide)
+                remove_list.append(ind)
             elif not CheckSpectrumCompatibility(peptide_spectrum, spectrum):
-                remove_list.append(peptide)
+                remove_list.append(ind)
         
-        for peptide in remove_list:
-            candidate_peptides.remove(peptide)
+        for i in range(len(remove_list)-1, -1, -1):
+            j = remove_list[i]
+            candidate_peptides = candidate_peptides[:j] + candidate_peptides[j+1:]
             
     return final_peptides
 
-#     pass
 
-def ExpandPeptide(peptides: set[str]) -> set[str]:
+def ExpandPeptide(mass_chains: set[str]) -> set[str]:
     """
     ExpandPeptide: Creates a list of all possible single letter peptide extensions of the all the peptide chains in 'peptides'.
 
@@ -79,16 +72,17 @@ def ExpandPeptide(peptides: set[str]) -> set[str]:
     Output:
         new_peptides: The new peptides.
     """
-    _, AminoAcids = GenerateAAInfo()
-    new_peptides=[]
-    for peptide in peptides:
-        for aa in AminoAcids:
-            if peptide == "_":
-                new_peptides.append(aa)
-            else:    
-                new_peptides.append(peptide+aa)
+    amino_acid_mass, _ = GenerateAAInfo()
+    masses = set(list(amino_acid_mass.values()))
+    new_masses=[]
+    for mass_chain in mass_chains:
+        for mass in masses:
+            if mass_chain == [0]:
+                new_masses.append([mass])
+            else:
+                new_masses.append([*mass_chain, mass])
 
-    return new_peptides
+    return new_masses
 
 def CalculatePeptideMass(peptide: str) -> int:
     """
@@ -101,9 +95,8 @@ def CalculatePeptideMass(peptide: str) -> int:
         mass: the mass of peptide.
     """
     mass = 0
-    mass_dict, _ = GenerateAAInfo()
     for aa in peptide:
-        mass += mass_dict[aa.upper()]
+        mass += aa
     return mass
 
 def ParentMass(spectrum: list[int]) -> int:
@@ -122,7 +115,7 @@ def ParentMass(spectrum: list[int]) -> int:
             parent_mass = mass
     return parent_mass
 
-def CheckSpectrumCompatibility(peptide_spectrum: str, spectrum: list[int]) -> bool:
+def CheckSpectrumCompatibility(peptide_spectrum: list[int], spectrum: list[int]) -> bool:
     """
     CheckSpectrumCompatibility: Checks if the spectrum generated by peptide is compatible with a given spectrum.
 
@@ -147,6 +140,53 @@ def CheckSpectrumCompatibility(peptide_spectrum: str, spectrum: list[int]) -> bo
             return False
 
     return True
+
+def LinearSpectrumMass(Peptide: list[int]) -> list[int]:
+    """
+    LinearSpectrum: Generates the theoretical mass spectrum generated by a peptide.
+
+    Input:
+        Peptide: An amino acid string Peptide.
+    
+        Alphabet: The single letter representations of the amino acids.
+
+        AminoAcidMass: The masses of the amino acids stored in a dictionary. Keys are the single letter representations
+        of amino acids.
+
+    Output: 
+        lin_spectrum: The linear spectrum of Peptide.
+    """
+    PrefixMass = [0 for i in range(len(Peptide)+1)]
+    for i in range(1, len(PrefixMass)):
+        PrefixMass[i] = PrefixMass[i-1] + Peptide[i-1]
+    lin_spectrum = [0]
+    for i in range(len(PrefixMass)-1):
+        for j in range(i+1, len(PrefixMass)):
+            lin_spectrum.append(PrefixMass[j]-PrefixMass[i])
+    return sorted(lin_spectrum)
+
+def CycloSpectrumMass(Peptide: list[int]) -> list[float]:
+    """
+    CycloSpectrum takes a peptide sequence (str) as input and returns a list of all
+    possible fragment lengths assuming the peptide is cyclical.
+
+    Input: 
+        A list of peptide masses.
+
+    Output: The cyclic spectrum of Peptide.
+    """
+
+    PrefixMass = [0 for i in range(len(Peptide)+1)]
+    for i in range(1, len(PrefixMass)):
+        PrefixMass[i] = PrefixMass[i-1] + Peptide[i-1]
+    peptideMass = PrefixMass[len(PrefixMass)-1]
+    cycle_spectrum = [0]
+    for i in range(len(PrefixMass)-1):
+        for j in range(i+1, len(PrefixMass)):
+            cycle_spectrum.append(PrefixMass[j]-PrefixMass[i])
+            if i > 0 and j < len(Peptide)-1:
+                cycle_spectrum.append(peptideMass-(PrefixMass[j]-PrefixMass[i]))
+    return sorted(cycle_spectrum)
 
 if __name__ == "__main__":
     main()
