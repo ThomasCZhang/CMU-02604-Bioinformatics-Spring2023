@@ -13,10 +13,10 @@ def main():
 
     answerpath = os.path.join(os.path.dirname(__file__), "answer.txt")
     with open(answerpath, 'w') as f:
-        # for idx0, peptide in enumerate(answer):
-        #     if idx0 != 0:
-        #         f.write(" ")
-            for idx, val in enumerate(answer):
+        for idx0, peptide in enumerate(answer):
+            if idx0 != 0:
+                f.write(" ")
+            for idx, val in enumerate(peptide):
                 if idx != 0:
                     f.write("-")
                 f.write(str(val))
@@ -51,17 +51,22 @@ def LeaderboardSequencing(spectrum, N) -> list[int]:
         final_peptides: a list of peptides that can generate specturm.
     """
     leaderboard = [[0]]
-    leader_peptides = []
+    leader_peptides = [[]]
+    best_score = 0
+    parent_mass = ParentMass(spectrum)
     while leaderboard:
         leaderboard = ExpandPeptide(leaderboard)
         remove_list = []
         for ind, peptide in enumerate(leaderboard):
-            if CalculatePeptideMass(peptide) == ParentMass(spectrum):
-                if CycloScore(peptide, spectrum) > CycloScore(leader_peptides, spectrum):
-                    leader_peptides = peptide
-                # elif CycloScore(peptide, spectrum) == CycloScore(leader_peptides, spectrum):
-                #     leader_peptides.append(peptide)
-            elif CalculatePeptideMass(peptide) > ParentMass(spectrum):
+            if CalculatePeptideMass(peptide) == parent_mass:
+                current_score = CycloScore(peptide, spectrum)
+                if current_score > best_score:
+                    best_score = current_score
+                    leader_peptides = [peptide]
+                elif current_score == best_score:
+                    leader_peptides.append(peptide)
+                    
+            elif CalculatePeptideMass(peptide) > parent_mass:
                 remove_list.append(ind)
 
         for i in range(len(remove_list)-1, -1, -1):
