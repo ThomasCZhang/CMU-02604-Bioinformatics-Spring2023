@@ -13,10 +13,13 @@ def main():
 
     answerpath = os.path.join(os.path.dirname(__file__), "answer.txt")
     with open(answerpath, 'w') as f:
-        for idx, val in enumerate(answer):
-            if idx != 0:
-                f.write("-")
-            f.write(str(val))
+        # for idx0, peptide in enumerate(answer):
+        #     if idx0 != 0:
+        #         f.write(" ")
+            for idx, val in enumerate(answer):
+                if idx != 0:
+                    f.write("-")
+                f.write(str(val))
 
 def ReadTestInputs_LeaderSeq(FilePath: str) -> tuple[int, list[int]]:
     """
@@ -48,14 +51,16 @@ def LeaderboardSequencing(spectrum, N) -> list[int]:
         final_peptides: a list of peptides that can generate specturm.
     """
     leaderboard = [[0]]
-    leader_peptide = []
+    leader_peptides = []
     while leaderboard:
         leaderboard = ExpandPeptide(leaderboard)
         remove_list = []
         for ind, peptide in enumerate(leaderboard):
             if CalculatePeptideMass(peptide) == ParentMass(spectrum):
-                if CycloScore(peptide, spectrum) > CycloScore(leader_peptide, spectrum):
-                    leader_peptide = peptide                    
+                if CycloScore(peptide, spectrum) > CycloScore(leader_peptides, spectrum):
+                    leader_peptides = peptide
+                # elif CycloScore(peptide, spectrum) == CycloScore(leader_peptides, spectrum):
+                #     leader_peptides.append(peptide)
             elif CalculatePeptideMass(peptide) > ParentMass(spectrum):
                 remove_list.append(ind)
 
@@ -65,7 +70,7 @@ def LeaderboardSequencing(spectrum, N) -> list[int]:
 
         leaderboard = Trim(leaderboard, spectrum, N)
                 
-    return leader_peptide
+    return leader_peptides
 
 def Trim(leaderboard: list[list[int]], spectrum: list[int],N: int) -> list[list[int]]:
     """
@@ -83,27 +88,26 @@ def Trim(leaderboard: list[list[int]], spectrum: list[int],N: int) -> list[list[
         top_peptides: the top N scoring peptides.
     """
     
-    top_peptides = [[-1] for i in range(N)]
-    top_scores = [0 for i in range(N)]    
+    top_peptides_dict = {} # key = score. Values = peptides.
+    top_scores = [-1 for i in range(N)]    
 
     for peptide in leaderboard:
         current_score = LinearScore(peptide, spectrum)
         for idx, ele in enumerate(top_scores):
             if current_score > ele:
-                top_peptides[idx] = peptide
+                # Delete the tracker for the old best score
+                if top_scores[idx] in top_peptides_dict:
+                    del top_peptides_dict[top_scores[idx]]
                 top_scores[idx] = current_score
-                break
-    
-    # Since I defaulted to making a top_peptides a list of length N, its possible that there are less than N candidates.
-    # Need to remove them in this case.
-    remove_indicies = []
-    for idx, val in enumerate(top_peptides):
-        if val == [-1]:
-            remove_indicies.append(idx)
-    
-    for i in range(len(remove_indicies)-1, -1, -1):
-        idx = remove_indicies[i]
-        top_peptides = top_peptides[:idx] + top_peptides[idx+1:]
+                top_peptides_dict[current_score] = [peptide]
+
+            elif (current_score == ele) and (peptide not in top_peptides_dict[ele]):
+                top_peptides_dict[ele].append(peptide)
+
+    top_peptides = []
+    for peptide_lists in top_peptides_dict.values():
+        top_peptides = top_peptides + peptide_lists
+
     return top_peptides
 
 def LinearScore(peptide: list[int], spectrum: list[int]) -> int:
