@@ -1,0 +1,515 @@
+# Thomas Zhang (tczhang) 02604-BioInformatics HW#1 Code
+
+import os, random
+from glob import glob
+
+def main():
+    #### For Profile Most Probable KMer
+    dirpath = os.path.join(os.path.dirname(__file__),
+                           "Files\Inputs\ProfileMostProbableKmer")
+    filepaths = glob(dirpath + "\\*.txt")
+    for path in filepaths:
+        Text, k, Profile = ReadTestFiles_ProfileMostProbableKmer(path)
+        bestMotif = ProfileMostProbableKmer(Text, k, Profile)
+        print(
+            f"The best motif for {os.path.basename(path)} is {bestMotif} with a score of {ScoreKMer(bestMotif, Profile): 0.2e}.")
+
+    #### For Randomized Motif Search
+    dirpath = os.path.join(os.path.dirname(__file__),
+                           "Files\Inputs\RandomizedMotifSearch")
+    filepaths = glob(dirpath + "\\*.txt")
+
+    for path in filepaths:
+        k, t, Dna = ReadTestFiles_RandomizedMotifSearch(path)
+        BestMotifs = RandomizedMotifSearch(Dna, k, t)
+        print(f"File {os.path.basename(path)}.")
+        for motif in BestMotifs:
+            print(motif)    
+
+    #### For Gibbs Sampling
+    dirpath = os.path.join(os.path.dirname(__file__),
+                           "Files\Inputs\Gibbs")
+    filepaths = glob(dirpath + "\\data*.txt")
+    for path in filepaths:
+        k, t, N, Dna = ReadTestFilesGibbsSampler(path)
+        BestMotifs = GibbsSampler(Dna, k, t, N)
+
+    AnswerPath = os.path.join(os.path.dirname(__file__), "GibbsAnswer.txt")
+    with open(AnswerPath, "w") as f:
+        for Line in BestMotifs:
+            f.write(Line)
+            f.write("\n")
+
+def ReadTestFiles_ProfileMostProbableKmer(filepath: str) -> tuple[str, int, list[dict[str, float]]]:
+    """
+    ReadData(): Reads data from a .txt file and formats that data for ProfileMostProbableKmer.
+    .txt Format should be as follows:
+    Line 1: string of "A", "T", "C", "G".
+    Line 2: an integer (value of k).
+    Line 3 to Line 6: A, C, G, T profiles (in that order).
+    
+    Input:
+        filepath (string): The path to the .txt file.
+    
+    Output:
+        Text (string): the text from which to find the best motif.
+        
+        k (int): the number of letters in the motif.
+        
+        Profile: (list of dictionaries): the scoring profile for the motifs.
+    """
+    switchDict = {
+        0: "A",
+        1: "C",
+        2: "G",
+        3: "T",
+    }
+    with open(filepath) as f:
+        for ind, line in enumerate(f):
+            if ind == 0:
+                Text = line.strip()
+            elif ind == 1:
+                k = int(line.strip())
+                # Profile = np.zeros((4, k))
+                Profile = [{} for i in range(0, k)]
+            else:
+                values = [float(val) for val in line.strip().split(" ")]
+                # Profile[ind-2, :] = np.array(values)
+                for a, b in enumerate(values):
+                    Profile[a][switchDict[ind-2]] = b
+    return (Text, k, Profile)
+
+def ProfileMostProbableKmer(Text: str, k: int, Profile: list[dict[str, float]]) -> str:
+    """
+    Takes a Text (string), a number k (int), and a 4 by k matrix profile (numpy matrix).
+
+    Input:
+        Text (string): The string from which to find the best motif.
+        
+        k (int): The number of letters in the motif.
+        
+        Profile (list of dictionaries): The scoring matrix.
+    
+    Output:
+        bestMotif (string): The best motif.
+    """
+    # For i from 0 to last starting position
+    #   score the k-mer starting from position i in Text using the scoring matrix "Profile"
+    bestMotif = Text[0:k]
+    currentBestScore = ScoreKMer(bestMotif, Profile)
+    for i in range(1, len(Text)-k+1):
+        currentMotif = Text[i:i+k]
+        score = ScoreKMer(currentMotif, Profile)
+        if score > currentBestScore:
+            currentBestScore = score
+            bestMotif = currentMotif
+    return bestMotif
+
+def ScoreKMer(motif: str, Profile: list[dict[str, float]]) -> float:
+    """
+    ScoreKmer() Takes a string of length k and then scores it using a 4 by k matrix Profile.
+
+    Input:
+        motif (string): The string to be scored.
+        
+        Profile (list of dictionaries): The matrix profile used to score the string.
+    
+    Output:
+        score (float): The score of the motif (value should be between 0 and 1).
+    """
+    for index, element in enumerate(motif):
+        if index == 0:
+            currentScore = Profile[index][element.upper()]
+        else:
+            currentScore *= Profile[index][element.upper()]
+    return currentScore
+
+def ReadTestFiles_RandomizedMotifSearch(filepath: str) -> tuple[int, int, list[dict[str, float]]]:
+    """
+    ReadData(): Reads data from a .txt file and formats that data for RandomizedMotifSearch.
+    .txt Format should be as follows:
+    Line 1: Two integers separated by a space. The first number is the  length of k-mers. The second is the number of
+    DNA sequences.
+    Line 2: The DNA sequences separated by spaces.
+
+    Input:
+        filepath (string): The path to the .txt file.
+    
+    Output:
+        k (int): the number of letters in the motif.
+        
+        t (int): the number of sequences.
+        
+        Dna: (list of strings): the scoring profile for the motifs.
+    """
+    with open(filepath) as f:
+        Dna = []
+        for ind, line in enumerate(f):
+            string = line.strip()
+            if ind == 0:
+                k, t = [int(x) for x in string.split(" ")]
+            else:
+                Dna.extend(string.split(" "))
+    return (k, t, Dna)
+
+def RandomizedMotifSearch(Dna: list[str], k: int, t: int) -> list[str]:
+    """
+    RandomizedMotifSearch(Dna, k, t): Finds the optimal k-length motifs from t Dna sequences by running
+    RandomizedMotifSearch many times.
+    
+    Input:
+        Iterations (int): The number of times to run RandomizedMotifSearch
+
+        Dna (list of str): DNA sequences to find motifs from.
+
+        k (int): the length of the motifs.
+
+        t (int): the number of DNA sequences.
+
+    Output:
+
+        BestMotifs (list of str): The best motifs. 
+    """
+    Iterations = 1000
+    BestMotifs = ["" for i in range(t)]
+    BestScore = k*t
+    for i in range(Iterations):
+        Motifs, NewScore = SingleRandomizedMotifSearch(Dna, k, t)
+        if NewScore < BestScore:
+            BestScore = NewScore
+            BestMotifs = Motifs
+    return BestMotifs
+
+
+def SingleRandomizedMotifSearch(Dna: list[str], k: int, t: int) -> tuple[list[str], int]:
+    """
+    SingleRandomizedMotifSearch(Dna, k, t): Finds the optimal k-length motifs from t Dna sequences.
+
+    Input:
+        Dna (list of str): DNA sequences to find motifs from.
+
+        k (int): the length of the motifs.
+        
+        t (int): the number of DNA sequences.
+        
+    Output:
+        BestMotifs (list of str): The best motifs. 
+        
+        BestScore (float): The best score.
+    """
+    BestMotifs = ChooseRandomMotifs(Dna, k)
+    while True:
+        Profile = CreateProfile(BestMotifs)
+        Motifs = FindMostProbableMotifs(Dna, k, Profile)
+        if Score(Motifs) < Score(BestMotifs):
+            BestMotifs = Motifs
+        else:
+            BestScore = Score(BestMotifs)
+            return BestMotifs, BestScore
+
+
+def ChooseRandomMotifs(Dna: list[str], k: int) -> list[str]:
+    """
+    ChooseRandommotifs(Dna): Chooses random motifs from a list of DNA sequences.
+    
+    Input:        
+        Dna (list of strings): List of DNA sequences.
+        
+        k (int): The length of the motifs.
+    Output:
+        
+        Motifs (list of strings): List of motifs
+    """
+    Motifs = ["" for i in range(len(Dna))]
+    for i, Sequence in enumerate(Dna):
+        Start = random.randrange(len(Sequence)-k+1)
+        Stop = Start + k
+        Motifs[i] = Sequence[Start:Stop]
+    return Motifs
+
+
+def CreateProfile(Motifs: list[str]) -> list[dict[str, int]]:
+    """
+    CreateProfile: Creates a profile matrix based on a list of motifs.
+
+    Input:
+        Motifs (list of strings): The list of motifs used to generate the profile matrix.
+    
+        k (int): length of the motifs.
+    Output:
+        Profile (list of dictionaries(string to int)): The profile matrix represented as a list of dictionaries.
+    """
+    Pseudocount = 1
+    Profile = CountLettersAtEachPosition(Motifs)
+    for Dictionary in Profile:
+        AddConstantToDictionaryValues(Pseudocount, Dictionary)
+
+    NormalizationFactor = len(Motifs) + 4*Pseudocount
+    for Dictionary in Profile:
+        for Key in Dictionary:
+            Dictionary[Key] /= NormalizationFactor
+
+    return Profile
+
+
+def InitializeProfileWithPseudoCounts(PseudocountValue: float, k: int) -> list[dict[str, int]]:
+    """
+    InitializeProfileWithPseduoCounts(): Creates a profile matrix (represented as a list of dictionaries of string
+    to int) with pseudo counts.
+    
+    Input:
+        PsuedocountValue (float): value to use as pseudocount for profile matrix.
+        
+        k (int): the length of the k-mers.
+    
+    Output:
+        Profile (list of dictionaries(string to int)): The initialized profile matrix.
+    """
+    Profile = [{} for i in range(k)]
+    for i in range(k):
+        Profile[i]["A"] = PseudocountValue
+        Profile[i]["C"] = PseudocountValue
+        Profile[i]["G"] = PseudocountValue
+        Profile[i]["T"] = PseudocountValue
+    return Profile
+
+
+def FindMostProbableMotifs(Dna: list[str], k: int, Profile: list[dict[str, int]]) -> list[str]:
+    """
+    FindMostProbableMotifs(Dna, k, Profile): Find the most probable k-length motifs from a list of Dna sequences using
+    Profile.
+
+    Input:
+        Dna (list of strings): The list of Dna sequences.
+        
+        k (int): The length of the motifs. 
+        
+        Profile (list of dictionaries(string to int)): The Profile matrix used to find the most likely motifs.
+
+    Output:
+        BestMotifs (list of strings): The best motifs based on the profile matrix.
+    """
+    BestMotifs = ["" for i in range(len(Dna))]
+    for i, Text in enumerate(Dna):
+        BestMotifs[i] = ProfileMostProbableKmer(Text, k, Profile)
+    return BestMotifs
+
+
+def Score(Motifs: list[str]) -> float:
+    """
+    Score(Motifs, Profile). Scores a list of motifs according to a profile.
+
+    Input:
+        Motifs (list of strings): Motifs to be scored.
+        
+        Profile (list of dictionaries(string to int). Profile used to score the motifs.
+    
+    Output:
+        FinalScore (float): The score of the motifs.
+    """
+    FinalScore = 0
+    CountProfile = CountLettersAtEachPosition(Motifs)
+    for Dictionary in CountProfile:
+        MaxKey = FindMaxKey(Dictionary)
+        for Key in Dictionary:
+            if Key != MaxKey:
+                FinalScore += Dictionary[Key]
+    return FinalScore
+
+
+
+def CountLettersAtEachPosition(Motifs: list[str]) -> list[dict[str, int]]:
+    """
+    Counts the number of times a letter appears in each position of the motifs.
+
+    Input:
+        Motifs (list of strings): The motifs being analyzed.
+    
+    Output: 
+        Counts (list[dict[str, int]]): The number of times a letter appears in a position for a collection of motifs.
+    """
+    k = len(Motifs[0])
+    Counts = [{"A": 0, "C": 0, "G": 0, "T": 0,} for i in range(k)]
+    for Text in Motifs:
+        for j, Letter in enumerate(Text):
+            Counts[j][Letter.upper()] += 1
+    return Counts
+
+def FindMaxKey(Dictionary: dict[str, int]) -> str:
+    """
+    Returns the key containing the max value in a dictionary of strings to ints.
+
+    Input:
+        Dictionary (dictionary of string to int): The dictionary being analyzed.
+    Output:
+        MaxKey (str): The key of the max value in Dictionary.
+    """
+    MaxKey = list(Dictionary.keys())[0]
+    for Key in Dictionary:
+        if Dictionary[Key] > Dictionary[MaxKey]:
+            MaxKey = Key
+    return MaxKey
+
+def AddConstantToDictionaryValues(Constant: float, Dictionary: dict[str, int]):
+    """
+    Adds some constant value to all values in a Dictionary of strings to ints.
+
+    Input:
+        Constant (float): The value being added to all elements in the dictionary.\n
+        
+        Dictionary (dictionary of strings to ints): The dictionary being modified.
+    """
+    for Key in Dictionary:
+        Dictionary[Key] += Constant
+
+
+
+def ReadTestFilesGibbsSampler(FilePath: str) -> tuple[int, int, int, list[str]]:
+    """
+    ReadTestFilesGibbsSampler: Reads test files for Gibbs Sampler.
+    Line 1: k, t, N
+    Line 2 to the end: The Dna strands.
+
+    Input:
+        FilePath (str): Path to the test file.
+
+    Output:
+        k (int): the number of characters in the KMer
+        
+        t (int): the number of dna strings
+        
+        N (int): the number of time 
+    """
+    with open(FilePath) as f:
+        Dna = []
+        for index, line in enumerate(f):
+            line = line.strip()
+            if index == 0:
+                k, t, N = [int(i) for i in line.split(" ")]
+            else:
+                Dna.extend(line.split(" "))
+    return k, t, N, Dna
+
+def GibbsSampler(Dna: list[str], k: int, t: int, N: int) -> list[str]:
+    """
+    Performs the Gibbs sampling to find the best motifs from a collection of DNA sequences.
+    Input:
+        Dna (list[str]): Collection of DNA sequences.
+        
+        k (int): number of characters in a K_mer.
+        
+        t (int): number of DNA.
+        
+        N (int): number of times a motif is replaced in one run of GibbsSampler from a random set of start motifs.
+
+    Output: 
+        BestMotif (list[str]): the best motifs.
+    """
+    NumIterations = 20
+    BestMotifs = ["" for i in range(t)]
+    BestScore = k*t # Arbitrary large starting score 
+    for i in range(NumIterations):
+        Motifs = GibbsSamplerOneIteration(Dna, k, t, N)
+        NewScore = Score(Motifs)
+        if NewScore < BestScore:
+            BestMotifs = Motifs
+            BestScore = NewScore
+    return BestMotifs
+
+
+def GibbsSamplerOneIteration(Dna: list[str], k: int, t: int, N: int) -> list[str]:
+    """
+    Finds the best motif reachable from a single random starting collection of motifs from Dna using Gibbs Sampling.
+
+    Input:
+
+        Dna (list[str]): List of strings. Each string represents a separate Dna strand.
+    
+        k (int): the number of bases in each motif.
+    
+        t (int): the number of Dna strands.
+    
+        N (int): the number of times to run the Gibbs iteration.
+
+    Output:
+        BestMotifs (list[str]): A list of strings, each string contains the best motif from each Dna strand as determined
+        by Gibbs sampling.
+    """
+    BestMotifs = ChooseRandomMotifs(Dna, k)
+    for i in range(N):
+        ind = random.randrange(t) # The index of the motif that will be ignored when making the profile.
+        Profile = CreateProfile([*BestMotifs[:ind], *BestMotifs[ind+1:]])
+        NewKMer = ChooseKMer(Dna[ind], k, Profile)
+        NewMotifs = [*BestMotifs[:ind], NewKMer, *BestMotifs[ind+1:]]
+        if Score(NewMotifs) < Score(BestMotifs):
+            BestMotifs = NewMotifs
+    return BestMotifs
+
+        
+def ChooseKMer(Sequence: str, k: int, Profile: list[dict[str,int]]) -> str:
+    """
+    Chooses which Kmer to put back to the best motif list based on Gibbs sampling. The Kmer choice is made by 
+    rolling a weighted dice.
+
+    Input:
+        Sequence (str): The DNA sequence from which we are chosing a Kmer
+
+        k (int): The number of characters in the KMer.
+
+        Profile (list[dict[str,int]]): The profile being used to determine the weights of the starting positions
+        of the KMers.
+    
+    Output:
+        Motif (str): The Kmer that is chosen.
+    """
+    Probabilities = KMerProbabilitiesOfStrand(Sequence, k, Profile)
+    KMerStartIndex = ChooseKMerIndex(Probabilities)
+    Motif = Sequence[KMerStartIndex: KMerStartIndex+k]
+    return Motif
+        
+def KMerProbabilitiesOfStrand(Dna: str, k: int, Profile: list[dict[str, int]]) -> list[float]:
+    """
+    Calculates the chance of each KMer in a string occuring based on a profile.
+    Returns the probabilities as a list of ints.
+
+    Input:
+        Dna (str): The string being analyzed.
+        
+        k (int): the length of the KMers.
+    
+        profile (list[dict[str,int]]): The profile used to calculate probabilites.
+    
+    Output:
+        Probabilities list[int]: A list containing the probabilites of each kmer in Dna.
+    """
+    NumKMers = len(Dna)-k+1
+    Probabilities = [0 for i in range(NumKMers)]
+    for i in range(NumKMers):
+        KMer = Dna[i:i+k]
+        Probabilities[i] = ScoreKMer(KMer, Profile)
+    
+    # Normalize the Probabilities so they sum to 1
+    NormalizationFactor = sum(Probabilities)
+    Probabilities = [i/NormalizationFactor for i in Probabilities]
+    return Probabilities
+
+
+def ChooseKMerIndex(Probabilities: list[float]) -> int:
+    """
+    Determines where in the Dna strand the Kmer should start from by rolling a random dice. 
+
+    Input:
+        Probabilities(list[float]): The weights for each starting position.
+
+    Output:
+        index (int): The starting index of the Kmer being chosen.
+    """
+    DiceRoll = random.random()
+    sum = 0
+    for index, val in enumerate(Probabilities):
+        sum += val
+        if sum > DiceRoll:
+            return index
+
+if __name__ == "__main__":
+    main()
