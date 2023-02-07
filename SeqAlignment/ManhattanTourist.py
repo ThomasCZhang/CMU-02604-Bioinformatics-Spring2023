@@ -4,7 +4,7 @@ from glob import glob
 def main():
     dirpath = os.path.join(os.path.dirname(__file__),
                            "Files\\inputs\\ManhattanTour")
-    filepaths = glob(dirpath + "\\input_1.txt")
+    filepaths = glob(dirpath + "\\data*.txt")
     for filepath in filepaths:
         n, m, down, right = ReadTestInputs_ManhattanTour(filepath)
         answer = ManhattanTourist(n, m, down, right)

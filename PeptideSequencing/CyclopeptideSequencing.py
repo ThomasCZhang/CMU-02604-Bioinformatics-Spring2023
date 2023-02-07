@@ -5,7 +5,7 @@ from glob import glob
 def main():
     dirpath = os.path.join(os.path.dirname(__file__),
                            "Files\\Inputs\\CyclopeptideSequencing")
-    filepaths = glob(dirpath + "\\data*.txt")
+    filepaths = glob(dirpath + "\\dataset_876189_10.txt")
     for filepath in filepaths:
         spectrum = ReadTestInputs_PeptideEncoding(filepath)
         peptideList = CyclopeptideSequencing(spectrum)
@@ -147,16 +147,12 @@ def LinearSpectrumMass(Peptide: list[int]) -> list[int]:
 
     Input:
         Peptide: An amino acid string Peptide.
-    
-        Alphabet: The single letter representations of the amino acids.
-
-        AminoAcidMass: The masses of the amino acids stored in a dictionary. Keys are the single letter representations
-        of amino acids.
 
     Output: 
         lin_spectrum: The linear spectrum of Peptide.
     """
     PrefixMass = [0 for i in range(len(Peptide)+1)]
+    # print(f"PrefixMass: {PrefixMass} \nPeptide: {Peptide}")
     for i in range(1, len(PrefixMass)):
         PrefixMass[i] = PrefixMass[i-1] + Peptide[i-1]
     lin_spectrum = [0]
