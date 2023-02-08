@@ -3,10 +3,14 @@ from TheoreticalSpectrum import *
 from CycloPeptideScoring import *
 from CyclopeptideSequencing import *
 
+class protein:
+    def __init__(self) -> None:
+        pass
+
 def main():
     dirpath = os.path.join(os.path.dirname(__file__),
                            "Files\\Inputs\\LeaderboardSeq")
-    filepaths = glob(dirpath + "\\input_0.txt")
+    filepaths = glob(dirpath + "\\data*.txt")
     for filepath in filepaths:
         N, spectrum = ReadTestInputs_LeaderSeq(filepath)
         answer = LeaderboardSequencing(spectrum, N)
@@ -71,9 +75,9 @@ def LeaderboardSequencing(spectrum: list[int], N: int) -> list[list[int]]:
                     leader_peptides = [peptide]
                 elif current_score == best_score:
                     leader_peptides.append(peptide)
-                    
             elif peptide_mass > parent_mass:
                 remove_list.append(ind)
+        
         if len(remove_list) > 0:
             print()
         for i in range(len(remove_list)-1, -1, -1):
@@ -106,29 +110,31 @@ def Trim(leaderboard: list[list[int]], spectrum: list[int],N: int) -> list[list[
         top_peptides: the top N scoring peptides.
     """
     
-    # top_scores = [-1 for i in range(N)]
-    top_scores = {} # key = score. value = index of peptide in leaderboard.
+    all_scores = {} # key = score. value = index of peptide in leaderboard.
     print("")
     for idx, peptide in enumerate(leaderboard):
         print(f"\rTrimming Index: {idx}", end = "")
         current_score = LinearScore(peptide, spectrum)
-        if current_score in top_scores:
-            top_scores[current_score].append(idx)
-        elif len(top_scores) < N:
-            top_scores[current_score] = [idx]
+        if current_score in all_scores:
+            all_scores[current_score].append(idx)
+        elif len(all_scores) < N:
+            all_scores[current_score] = [idx]
         else:
-            for score in top_scores:
+            for score in all_scores:
                 if current_score > score:
-                    del top_scores[score]
-                    top_scores[current_score] = [idx]
+                    del all_scores[score]
+                    all_scores[current_score] = [idx]
                     break
     
-    best_scores = list(top_scores)
-    best_scores.sort(reverse=True)
+    sorted_scores = list(all_scores)
+    sorted_scores.sort(reverse=True)
 
-    top_peptides = [leaderboard[i] for score in best_scores for i in top_scores[score]]
-    if len(top_peptides) > 6000:
-        top_peptides = top_peptides[:3000]
+    top_peptides = []
+    for score in sorted_scores:
+        for idx in all_scores[score]:
+            top_peptides.append(leaderboard[idx])
+        if len(top_peptides) > N:
+            break
 
     return top_peptides
 

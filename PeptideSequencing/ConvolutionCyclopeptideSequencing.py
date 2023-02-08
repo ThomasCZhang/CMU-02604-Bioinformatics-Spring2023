@@ -5,11 +5,12 @@ from LeaderboardSequencing import *
 def main():
     dirpath = os.path.join(os.path.dirname(__file__),
                            "Files\\Inputs\\ConvolutionSeq")
-    filepaths = glob(dirpath + "\\input_0.txt")
+    filepaths = glob(dirpath + "\\input_1.txt")
     for filepath in filepaths:
         M, N, spectrum = ReadTestInputs_ConvolutionSeq(filepath)
         answer = ConvolutionCyclopeptideSequencing(spectrum, M, N)
 
+    answer = answer[1:2]
     answerpath = os.path.join(os.path.dirname(__file__), "new_answer.txt")
     with open(answerpath, 'w') as f:
         for idx0, peptide in enumerate(answer):
@@ -158,6 +159,7 @@ def ConvolutionLeaderboardSequencing(spectrum: list[int], N: int, aa_list: list[
                     
             elif peptide_mass > parent_mass:
                 remove_list.append(ind)
+        
         if len(remove_list) > 0:
             print()
         for i in range(len(remove_list)-1, -1, -1):

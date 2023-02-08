@@ -4,7 +4,7 @@ from glob import glob
 def main():
     # path to directory containing test files
     dirpath = os.path.join(os.path.dirname(__file__), "files\\inputs\\lcs")
-    filepaths = glob(dirpath + "\\data*.txt")
+    filepaths = glob(dirpath + "\\input_0.txt")
 
     for path in filepaths:
         v, w = ReadLCSData(path)
