@@ -1,30 +1,26 @@
-import os
-from TheoreticalSpectrum import *
-from CycloPeptideScoring import *
+import os, copy
+from CyclopeptideScoring import *
 from CyclopeptideSequencing import *
-
-class protein:
-    def __init__(self) -> None:
-        pass
+from Trim import Trim
+from custom_classes import *
 
 def main():
     dirpath = os.path.join(os.path.dirname(__file__),
                            "Files\\Inputs\\LeaderboardSeq")
-    filepaths = glob(dirpath + "\\data*.txt")
+    filepaths = glob(dirpath + "\\input_0.txt")
     for filepath in filepaths:
         N, spectrum = ReadTestInputs_LeaderSeq(filepath)
         answer = LeaderboardSequencing(spectrum, N)
 
-    answerpath = os.path.join(os.path.dirname(__file__), "answer2.txt")
+    answerpath = os.path.join(os.path.dirname(__file__), "answer.txt")
     with open(answerpath, 'w') as f:
-        for idx0, peptide in enumerate(answer):
+        for idx0, sp in enumerate(answer):
             if idx0 != 0:
                 f.write(" ")
-            for idx1, val in enumerate(peptide):
+            for idx1, val in enumerate(sp.protein.peptide):
                 if idx1 != 0:
                     f.write("-")
-                if idx1 < 38:
-                    f.write(str(val))
+                f.write(str(val))
 
 def ReadTestInputs_LeaderSeq(FilePath: str) -> tuple[int, list[int]]:
     """
@@ -55,27 +51,29 @@ def LeaderboardSequencing(spectrum: list[int], N: int) -> list[list[int]]:
     Ouput:
         final_peptides: a list of peptides that can generate specturm.
     """
-    leaderboard = [[0]]
-    leader_peptides = [[]]
+    amino_acid_mass, _ = GenerateAAInfo()
+    masses = set(list(amino_acid_mass.values()))
+
+    leaderboard = [Scored_Protein([],"")]
+    leader_peptides = []
     best_score = 0
     parent_mass = ParentMass(spectrum)
     gen = 0
     while leaderboard:
         print(f"\nCurrentGen: {gen}.")
-        leaderboard = ExpandPeptide(leaderboard)
+        leaderboard = ExpandProtein(leaderboard, masses, spectrum)
         print(f"Leader Board Size: {len(leaderboard)}.")
         remove_list = []
-        for ind, peptide in enumerate(leaderboard):
+        for ind, p in enumerate(leaderboard):
             print(f"\rLeaderboard while loop index: {ind}.", end = "")
-            peptide_mass = CalculatePeptideMass(peptide)
-            if peptide_mass == parent_mass:
-                current_score = CycloScore(peptide, spectrum)
+            if p.protein.mass == parent_mass:
+                current_score = CyclopeptideScoring(p.protein.peptide, spectrum)
                 if current_score > best_score:
                     best_score = current_score
-                    leader_peptides = [peptide]
+                    leader_peptides = [p]
                 elif current_score == best_score:
-                    leader_peptides.append(peptide)
-            elif peptide_mass > parent_mass:
+                    leader_peptides.append(p)
+            elif p.protein.mass > parent_mass:
                 remove_list.append(ind)
         
         if len(remove_list) > 0:
@@ -87,98 +85,35 @@ def LeaderboardSequencing(spectrum: list[int], N: int) -> list[list[int]]:
 
         leaderboard = Trim(leaderboard, spectrum, N)
         if len(leaderboard) != 0:
-            print(f"\nMass of last peptide: {CalculatePeptideMass(leaderboard[-1])}")
+            print(f"\nMass of last peptide: {leaderboard[-1].protein.mass}")
         gen += 1
         
     
-    print(f"\nNumber of peptides: {len(leader_peptides)}, \nBest Score: {best_score}")
+    print(f"\n\nNumber of peptides: {len(leader_peptides)}, \nBest Score: {best_score}")
     return leader_peptides
 
-def Trim(leaderboard: list[list[int]], spectrum: list[int],N: int) -> list[list[int]]:
+
+def ExpandProtein(proteins: list[Scored_Protein], masses: set[int], spectrum: list[int]) -> set[str]:
     """
-    Trim: Takes a list of peptides, a spectrum and an integer N. Returns the top N scoring peptides based on the
-    given spectrum.
+    ExpandPeptide: Creates a list of all possible single letter peptide extensions of the all the peptide chains in 'peptides'.
 
     Input:
-        leaderboard: list of peptides. each peptide represented as a list of its amino acid masses in order.
+        protein: A protein object. These will be extended by each of the unique amino acid masses.
 
-        specturm: mass spectrum as a list of ints.
-
-        N: the number of candidates to keep.
-    
+        masses: A set of unique amino acid masses.
+        
     Output:
-        top_peptides: the top N scoring peptides.
+        new_peptides: The new peptides.
     """
-    
-    all_scores = {} # key = score. value = index of peptide in leaderboard.
-    print("")
-    for idx, peptide in enumerate(leaderboard):
-        print(f"\rTrimming Index: {idx}", end = "")
-        current_score = LinearScore(peptide, spectrum)
-        if current_score in all_scores:
-            all_scores[current_score].append(idx)
-        elif len(all_scores) < N:
-            all_scores[current_score] = [idx]
-        else:
-            for score in all_scores:
-                if current_score > score:
-                    del all_scores[score]
-                    all_scores[current_score] = [idx]
-                    break
-    
-    sorted_scores = list(all_scores)
-    sorted_scores.sort(reverse=True)
+    new_proteins=[]
+    for prot in proteins:
+        for mass in masses:
+            temp_protein = copy.deepcopy(prot)
+            temp_protein.AddAminoAcid(mass, spectrum)
+            new_proteins.append(temp_protein)
 
-    top_peptides = []
-    for score in sorted_scores:
-        for idx in all_scores[score]:
-            top_peptides.append(leaderboard[idx])
-        if len(top_peptides) > N:
-            break
-
-    return top_peptides
-
-def LinearScore(peptide: list[int], spectrum: list[int]) -> int:
-    """
-    Score: Calculates the score between the linear spectrum of a peptide and a given spectrum.
-
-    Input:
-        peptide: a peptide represented as a list of peptide masses.
-
-    Output:
-        spectrum: the given mass spectrum.
-    """
-    peptide_spectrum = LinearSpectrumMass(peptide)
-    score = 0
-    used_indicies = set() # indexes of masses in spectrum that have already been matched with a mass in peptide_spectrum.
-    for pep_mass in peptide_spectrum:
-        for ind, spec_mass in enumerate(spectrum):
-            if (pep_mass == spec_mass) and (ind not in used_indicies):
-                used_indicies.add(ind)
-                score += 1
-                break
-    return score
-
-def CycloScore(peptide: list[int], spectrum: list[int]) -> int:
-    """
-    Score: Calculates the score between the linear spectrum of a peptide and a given spectrum.
-
-    Input:
-        peptide: a peptide represented as a list of peptide masses.
-
-    Output:
-        spectrum: the given mass spectrum.
-    """
-    peptide_spectrum = CycloSpectrumMass(peptide)
-    score = 0
-    used_indicies = set() # indexes of masses in spectrum that have already been matched with a mass in peptide_spectrum.
-    for pep_mass in peptide_spectrum:
-        for ind, spec_mass in enumerate(spectrum):
-            if (pep_mass == spec_mass) and (ind not in used_indicies):
-                used_indicies.add(ind)
-                score += 1
-                break
-    return score
+    return new_proteins
 
 if __name__ == "__main__":
     main()
+

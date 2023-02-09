@@ -1,14 +1,13 @@
-class protein:
-    def __init__(self, peptide: list[int]):
+class Protein:
+    def __init__(self, peptide: list[int], aa_string: str):
         self.mass = sum(peptide)
         self.peptide = peptide
-        # self.prefix_mass = self.GeneratePrefixMass()
-        # self.linear_spectrum = self.LinearSpectrum()
+        self.aa = aa_string
     
-class scored_protein:
-    def __init__(self, p: protein):
-        self.protein = protein
-        self.used_idx = {}
+class Scored_Protein:
+    def __init__(self, peptide: list[int], aa_string: str):
+        self.protein = Protein(peptide, aa_string)
+        self.used_idx = set()
         self.score = 0
 
     def LinearScore(self, spectrum: list[int]):
@@ -50,7 +49,7 @@ class scored_protein:
                 lin_spectrum.append(prefix_mass[j]-prefix_mass[i])
         return lin_spectrum
     
-    def AddAminoAcid(self, amino_acid: int, spectrum: list[int]) -> None:
+    def AddAminoAcid(self, amino_acid: int, spectrum: list[int]):
         self.protein.mass += amino_acid
         self.protein.peptide.append(amino_acid)
         
@@ -62,7 +61,7 @@ class scored_protein:
 
     def UpdateLinearScore(self, new_mass: list[int], spectrum: list[int]):
         for m in new_mass:
-            for idx, spec_mass in spectrum:
+            for idx, spec_mass in enumerate(spectrum):
                 if (m == spec_mass) and (idx not in self.used_idx):
                     self.used_idx.add(idx)
                     self.score += 1

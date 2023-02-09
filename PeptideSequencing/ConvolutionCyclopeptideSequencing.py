@@ -1,26 +1,23 @@
 from SpectralConvolution import *
 from LeaderboardSequencing import *
 
-
 def main():
     dirpath = os.path.join(os.path.dirname(__file__),
                            "Files\\Inputs\\ConvolutionSeq")
-    filepaths = glob(dirpath + "\\input_1.txt")
+    filepaths = glob(dirpath + "\\real*.txt")
     for filepath in filepaths:
         M, N, spectrum = ReadTestInputs_ConvolutionSeq(filepath)
         answer = ConvolutionCyclopeptideSequencing(spectrum, M, N)
 
-    answer = answer[1:2]
-    answerpath = os.path.join(os.path.dirname(__file__), "new_answer.txt")
+    answerpath = os.path.join(os.path.dirname(__file__), "answer.txt")
     with open(answerpath, 'w') as f:
-        for idx0, peptide in enumerate(answer):
+        for idx0, sp in enumerate(answer):
             if idx0 != 0:
-                f.write(" ")
-            for idx1, val in enumerate(peptide):
+                f.write("\n")
+            for idx1, val in enumerate(sp.protein.peptide):
                 if idx1 != 0:
-                    f.write("-")
-                if idx1 < 38:
-                    f.write(str(val))
+                    f.write(" ")
+                f.write(str(val))
 
 def ReadTestInputs_ConvolutionSeq(FilePath: str) -> tuple[int, int, list[int]]:
     """
@@ -39,7 +36,7 @@ def ReadTestInputs_ConvolutionSeq(FilePath: str) -> tuple[int, int, list[int]]:
     with open(FilePath) as f:
         M = int(f.readline().strip())
         N = int(f.readline().strip())
-        spectrum = [int(i) for i in f.readline().strip().split(" ")]
+        spectrum = [int(round(float(i))) for i in f.readline().strip().split(" ")]
 
     return M, N, spectrum
 
@@ -61,10 +58,8 @@ def ConvolutionCyclopeptideSequencing(spectrum: list[int], M: int, N: int) -> li
     convolution_spectrum = SpectralConvolution(spectrum)
     mass_frequencies = CountMassFrequencies(convolution_spectrum)
 
-    # aa_mass_dict, _ = GenerateAAInfo() # Not sure if we only want masses that correspond to the 20 common amino acids.
     del_list = []
     for mass in mass_frequencies:
-        # if (mass < 57) or (mass > 200) or (mass not in aa_mass_dict.values()):
         if (mass < 57) or (mass > 200):
             del_list.append(mass)
     
@@ -76,31 +71,33 @@ def ConvolutionCyclopeptideSequencing(spectrum: list[int], M: int, N: int) -> li
     peptides = ConvolutionLeaderboardSequencing(spectrum, N, potential_masses)
     return peptides
 
-def GetHighestFrequencyMasses(frequency_dict: dict[int, int], M):
+def GetHighestFrequencyMasses(mass_frequency_dict: dict[int, int], M):
     """
     Returns a list of the most frequent M masses given a frequency dictionary where key = mass and value = frequency.
 
     Input:
-        frequency_dict: The frequency dictionary.
+        frequency_dict: The frequency dictionary. Key = mass, value = frequency.
 
     Ouput:
-        best_masses: The M most frequent masses. Ties count for a single position.
+        best_masses: The M most frequent masses. 
     """
-    highest_frequencies = {}
-    for mass in frequency_dict:
-        current_freq = frequency_dict[mass]
-        if current_freq in highest_frequencies:
-            highest_frequencies[current_freq].append(mass)
-        elif len(highest_frequencies) < M: 
-            highest_frequencies[current_freq] = [mass]
-        else:
-            for freq in highest_frequencies:
-                if current_freq > freq:
-                    del highest_frequencies[freq]
-                    highest_frequencies[current_freq] = [mass]
-                    break
+    frequencies = {}
+    for mass in mass_frequency_dict:
+        current_freq = mass_frequency_dict[mass]
+        if current_freq in frequencies:
+            frequencies[current_freq].append(mass)
+        else: 
+            frequencies[current_freq] = [mass]
+
+    all_freqs = list(frequencies)
+    all_freqs.sort(reverse = True)
+
+    best_masses = []
+    for freq in all_freqs:
+        best_masses.extend(frequencies[freq])
+        if len(best_masses) >= M:
+            break    
     
-    best_masses = [i for key in highest_frequencies for i in highest_frequencies[key]]
     return best_masses
 
 def CountMassFrequencies(spectrum: list[int]) -> dict[int, int]:
@@ -117,9 +114,9 @@ def CountMassFrequencies(spectrum: list[int]) -> dict[int, int]:
     frequencies = {}
     for mass in spectrum:
         if mass in frequencies:
-            mass += 1
+            frequencies[mass] += 1
         else:
-            frequencies[mass] = 0
+            frequencies[mass] = 1
     return frequencies
 
 def ConvolutionLeaderboardSequencing(spectrum: list[int], N: int, aa_list: list[int]) -> list[list[int]]:
@@ -136,67 +133,39 @@ def ConvolutionLeaderboardSequencing(spectrum: list[int], N: int, aa_list: list[
     Ouput:
         final_peptides: a list of peptides that can generate specturm.
     """
-    leaderboard = [[0]]
-    leader_peptides = [[]]
+    leaderboard = [Scored_Protein([], "")]
+    leader_peptides = []
     best_score = 0
     parent_mass = ParentMass(spectrum)
     gen = 0
     while leaderboard:
-        print(f"\nCurrentGen: {gen}.")
-        leaderboard = ConvolutionExpandPeptide(leaderboard, aa_list)
-        print(f"Leader Board Size: {len(leaderboard)}.")
+        print(f"\rCurrentGen: {gen}.", end = " ")
+        leaderboard = ExpandProtein(leaderboard, aa_list, spectrum)
         remove_list = []
-        for ind, peptide in enumerate(leaderboard):
-            print(f"\rLeaderboard while loop index: {ind}.", end = "")
-            peptide_mass = CalculatePeptideMass(peptide)
-            if peptide_mass == parent_mass:
-                current_score = CycloScore(peptide, spectrum)
+        for ind, p in enumerate(leaderboard):
+            if p.protein.mass == parent_mass:
+                current_score = CyclopeptideScoring(p.protein.peptide, spectrum)
                 if current_score > best_score:
                     best_score = current_score
-                    leader_peptides = [peptide]
+                    leader_peptides = [p]
                 elif current_score == best_score:
-                    leader_peptides.append(peptide)
+                    leader_peptides.append(p)
                     
-            elif peptide_mass > parent_mass:
+            elif p.protein.mass > parent_mass:
                 remove_list.append(ind)
         
         if len(remove_list) > 0:
             print()
         for i in range(len(remove_list)-1, -1, -1):
-            print(f"\rRemoving Idx: {len(remove_list)-i-1}", end = "")
             idx = remove_list[i]
             del leaderboard[idx]
 
         leaderboard = Trim(leaderboard, spectrum, N)
-        if len(leaderboard) != 0:
-            print(f"\nMass of last peptide: {CalculatePeptideMass(leaderboard[-1])}")
         gen += 1
         
     
-    print(f"\nNumber of peptides: {len(leader_peptides)}, \nBest Score: {best_score}")
+    print(f"\n\nNumber of peptides: {len(leader_peptides)}, \nBest Score: {best_score}")
     return leader_peptides
-
-def ConvolutionExpandPeptide(mass_chains: set[str], aa_list: list[int]) -> set[str]:
-    """
-    ExpandPeptide: Creates a list of all possible single letter peptide extensions of the all the peptide chains in 'peptides'.
-
-    Input:
-        mass_chain: A list of peptide chains. These will be extended by each of amino acids in aa_list.
-
-        aa_list: The masses that can be used to extend the peptide chains.
-
-    Output:
-        new_peptides: The new peptides.
-    """
-    new_masses=[]
-    for mass_chain in mass_chains:
-        for mass in aa_list:
-            if mass_chain == [0]:
-                new_masses.append([mass])
-            else:
-                new_masses.append([*mass_chain, mass])
-
-    return new_masses
 
 if __name__ == "__main__":
     main()

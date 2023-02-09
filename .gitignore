@@ -1,4 +1,3 @@
 venv/
-*/*answer*.txt
-*/*.t
+*/**.txt
 */__pycache__
