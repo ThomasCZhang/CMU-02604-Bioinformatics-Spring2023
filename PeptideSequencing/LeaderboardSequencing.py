@@ -7,7 +7,7 @@ from custom_classes import *
 def main():
     dirpath = os.path.join(os.path.dirname(__file__),
                            "Files\\Inputs\\LeaderboardSeq")
-    filepaths = glob(dirpath + "\\input_0.txt")
+    filepaths = glob(dirpath + "\\data*10.txt")
     for filepath in filepaths:
         N, spectrum = ReadTestInputs_LeaderSeq(filepath)
         answer = LeaderboardSequencing(spectrum, N)

@@ -1,6 +1,6 @@
 import os
 from glob import glob
-from protein import *
+from custom_classes import *
 from TheoreticalSpectrum import *
 
 def main():
