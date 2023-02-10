@@ -1,10 +1,35 @@
 class Protein:
+    """
+    Class that represents a protein.
+
+    Properties:
+        mass: the total mass of the protein
+
+        peptide: the mass of each amino acid in the protein.
+
+        aa: The single letter amino acid representation of the protein.
+            (This isn't updated as of right now so don't expect this to be accurate).
+    """
     def __init__(self, peptide: list[int], aa_string: str):
         self.mass = sum(peptide)
         self.peptide = peptide
         self.aa = aa_string
     
 class Scored_Protein:
+    """
+    Holds info relevant to keeping track of the linear score of a protein.
+
+    Properties:
+        Protein: A protein object
+
+        spectrum: The mass spectrum that protein will be scored against
+
+        used_idx: a list of indicies that are associated with masses in mass spectrum that have already been accounted
+        for in the score. Used for fast updating of score when new amino acid is added.
+
+        score: the linear score of a protein.
+
+    """
     def __init__(self, peptide: list[int], aa_string: str, spectrum: list[int]):
         self.protein = Protein(peptide, aa_string)
         self.spectrum = spectrum # The spectrum the protein is scored against.
@@ -31,6 +56,9 @@ class Scored_Protein:
                     break
 
     def GeneratePrefixMass(self) -> list[int]:
+        """
+        Generate the prefix masses of a protein.
+        """
         prefix_mass = [0 for i in range(len(self.protein.peptide)+1)]
         for i in range(1, len(prefix_mass)):
             prefix_mass[i] = prefix_mass[i-1] + self.protein.peptide[i-1]
@@ -51,6 +79,12 @@ class Scored_Protein:
         return lin_spectrum
     
     def AddAminoAcid(self, amino_acid: int):
+        """
+        Add an amino acid to the protein.
+
+        Input:
+            amino_acid: the amino acid to add.
+        """
         self.protein.mass += amino_acid
         self.protein.peptide.append(amino_acid)
         
@@ -60,8 +94,15 @@ class Scored_Protein:
             new_spectrum_masses.append(self.protein.mass - prefix_mass[i])
         self.UpdateLinearScore(new_spectrum_masses)
 
-    def UpdateLinearScore(self, new_mass: list[int]):
-        for m in new_mass:
+    def UpdateLinearScore(self, new_masses: list[int]):
+        """
+        Updates the linear score of the protein based on the new masses added. This way we don't have to recount
+        the contribution of old masses.
+
+        Input:
+            new_masses: the new masses added to the theoretical linear spectrum of protein due to adding an amino acid.
+        """
+        for m in new_masses:
             for idx, spec_mass in enumerate(self.spectrum):
                 if (m == spec_mass) and (idx not in self.used_idx):
                     self.used_idx.add(idx)
@@ -69,6 +110,11 @@ class Scored_Protein:
                     break
 
     def copy(self):
+        """
+        Custom copy method. 
+
+        All properties of scored_protein are copied in a "deep copy" like fashion except for the property "spectrum".
+        """
         cls = self.__class__
         new_sp = cls.__new__(cls)
         
