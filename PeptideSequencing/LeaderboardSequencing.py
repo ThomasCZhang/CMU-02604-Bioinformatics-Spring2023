@@ -54,18 +54,17 @@ def LeaderboardSequencing(spectrum: list[int], N: int) -> list[list[int]]:
     amino_acid_mass, _ = GenerateAAInfo()
     masses = set(list(amino_acid_mass.values()))
 
-    leaderboard = [Scored_Protein([],"")]
+    leaderboard = [Scored_Protein([],"", spectrum)]
     leader_peptides = []
     best_score = 0
     parent_mass = ParentMass(spectrum)
     gen = 0
     while leaderboard:
-        print(f"\nCurrentGen: {gen}.")
+        print(f"\rCurrentGen: {gen}.", end = "")
         leaderboard = ExpandProtein(leaderboard, masses, spectrum)
-        print(f"Leader Board Size: {len(leaderboard)}.")
         remove_list = []
         for ind, p in enumerate(leaderboard):
-            print(f"\rLeaderboard while loop index: {ind}.", end = "")
+
             if p.protein.mass == parent_mass:
                 current_score = CyclopeptideScoring(p.protein.peptide, spectrum)
                 if current_score > best_score:
@@ -75,21 +74,15 @@ def LeaderboardSequencing(spectrum: list[int], N: int) -> list[list[int]]:
                     leader_peptides.append(p)
             elif p.protein.mass > parent_mass:
                 remove_list.append(ind)
-        
-        if len(remove_list) > 0:
-            print()
+
         for i in range(len(remove_list)-1, -1, -1):
-            print(f"\rRemoving Idx: {len(remove_list)-i-1}", end = "")
             idx = remove_list[i]
             del leaderboard[idx]
 
         leaderboard = Trim(leaderboard, spectrum, N)
-        if len(leaderboard) != 0:
-            print(f"\nMass of last peptide: {leaderboard[-1].protein.mass}")
         gen += 1
-        
-    
-    print(f"\n\nNumber of peptides: {len(leader_peptides)}, \nBest Score: {best_score}")
+
+    print(f"\n\nBest Score is {best_score}. Number of Peptides is {len(leader_peptides)}")
     return leader_peptides
 
 
@@ -108,8 +101,8 @@ def ExpandProtein(proteins: list[Scored_Protein], masses: set[int], spectrum: li
     new_proteins=[]
     for prot in proteins:
         for mass in masses:
-            temp_protein = copy.deepcopy(prot)
-            temp_protein.AddAminoAcid(mass, spectrum)
+            temp_protein = prot.copy()
+            temp_protein.AddAminoAcid(mass)
             new_proteins.append(temp_protein)
 
     return new_proteins

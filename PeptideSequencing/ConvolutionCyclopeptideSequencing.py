@@ -4,7 +4,7 @@ from LeaderboardSequencing import *
 def main():
     dirpath = os.path.join(os.path.dirname(__file__),
                            "Files\\Inputs\\ConvolutionSeq")
-    filepaths = glob(dirpath + "\\real*.txt")
+    filepaths = glob(dirpath + "\\data*8.txt")
     for filepath in filepaths:
         M, N, spectrum = ReadTestInputs_ConvolutionSeq(filepath)
         answer = ConvolutionCyclopeptideSequencing(spectrum, M, N)
@@ -133,13 +133,13 @@ def ConvolutionLeaderboardSequencing(spectrum: list[int], N: int, aa_list: list[
     Ouput:
         final_peptides: a list of peptides that can generate specturm.
     """
-    leaderboard = [Scored_Protein([], "")]
+    leaderboard = [Scored_Protein([], "", spectrum)]
     leader_peptides = []
     best_score = 0
     parent_mass = ParentMass(spectrum)
     gen = 0
     while leaderboard:
-        print(f"\rCurrentGen: {gen}.", end = " ")
+        print(f"\rCurrentGen: {gen}.", end = "")
         leaderboard = ExpandProtein(leaderboard, aa_list, spectrum)
         remove_list = []
         for ind, p in enumerate(leaderboard):
@@ -153,9 +153,7 @@ def ConvolutionLeaderboardSequencing(spectrum: list[int], N: int, aa_list: list[
                     
             elif p.protein.mass > parent_mass:
                 remove_list.append(ind)
-        
-        if len(remove_list) > 0:
-            print()
+
         for i in range(len(remove_list)-1, -1, -1):
             idx = remove_list[i]
             del leaderboard[idx]
@@ -164,7 +162,7 @@ def ConvolutionLeaderboardSequencing(spectrum: list[int], N: int, aa_list: list[
         gen += 1
         
     
-    print(f"\n\nNumber of peptides: {len(leader_peptides)}, \nBest Score: {best_score}")
+    print(f"\n\nBest Score is {best_score}. Number of Peptides is {len(leader_peptides)}.")
     return leader_peptides
 
 if __name__ == "__main__":

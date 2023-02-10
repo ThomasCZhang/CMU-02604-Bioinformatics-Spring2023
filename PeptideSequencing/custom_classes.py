@@ -5,14 +5,16 @@ class Protein:
         self.aa = aa_string
     
 class Scored_Protein:
-    def __init__(self, peptide: list[int], aa_string: str):
+    def __init__(self, peptide: list[int], aa_string: str, spectrum: list[int]):
         self.protein = Protein(peptide, aa_string)
+        self.spectrum = spectrum # The spectrum the protein is scored against.
         self.used_idx = set()
         self.score = 0
+        self.LinearScore()
 
-    def LinearScore(self, spectrum: list[int]):
+    def LinearScore(self):
         """
-        Score: Calculates the score between the linear spectrum of a peptide and a given spectrum.
+        LinearScore: Calculates the score between the linear spectrum of a peptide and a given spectrum.
 
         Input:
             peptide: a peptide represented as a list of peptide masses.
@@ -21,9 +23,8 @@ class Scored_Protein:
             spectrum: the given mass spectrum.
         """
         peptide_spectrum = self.LinearSpectrum()
-        self.score += 1
         for pep_mass in peptide_spectrum:
-            for ind, spec_mass in enumerate(spectrum):
+            for ind, spec_mass in enumerate(self.spectrum):
                 if (pep_mass == spec_mass) and (ind not in self.used_idx):
                     self.used_idx.add(ind)
                     self.score += 1
@@ -49,7 +50,7 @@ class Scored_Protein:
                 lin_spectrum.append(prefix_mass[j]-prefix_mass[i])
         return lin_spectrum
     
-    def AddAminoAcid(self, amino_acid: int, spectrum: list[int]):
+    def AddAminoAcid(self, amino_acid: int):
         self.protein.mass += amino_acid
         self.protein.peptide.append(amino_acid)
         
@@ -57,12 +58,22 @@ class Scored_Protein:
         new_spectrum_masses = []
         for i in range(len(prefix_mass)-1):
             new_spectrum_masses.append(self.protein.mass - prefix_mass[i])
-        self.UpdateLinearScore(new_spectrum_masses, spectrum)
+        self.UpdateLinearScore(new_spectrum_masses)
 
-    def UpdateLinearScore(self, new_mass: list[int], spectrum: list[int]):
+    def UpdateLinearScore(self, new_mass: list[int]):
         for m in new_mass:
-            for idx, spec_mass in enumerate(spectrum):
+            for idx, spec_mass in enumerate(self.spectrum):
                 if (m == spec_mass) and (idx not in self.used_idx):
                     self.used_idx.add(idx)
                     self.score += 1
                     break
+
+    def copy(self):
+        cls = self.__class__
+        new_sp = cls.__new__(cls)
+        
+        setattr(new_sp, "protein", Protein(self.protein.peptide.copy(),self.protein.aa))
+        setattr(new_sp, "used_idx", self.used_idx.copy())
+        setattr(new_sp, "score", self.score)
+        setattr(new_sp, "spectrum", self.spectrum)
+        return new_sp
