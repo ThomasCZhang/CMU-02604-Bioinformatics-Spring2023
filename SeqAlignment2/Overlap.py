@@ -3,7 +3,7 @@ from glob import glob
 
 def main():
     dirpath = os.path.join(os.path.dirname(__file__), "file\\overlap")
-    filepaths = glob(dirpath + "\\input*.txt")
+    filepaths = glob(dirpath + "\\data*.txt")
     for file in filepaths:
         match_reward, mismatch_penalty, indel_penalty, seq1, seq2 = ReadTest_Overlap(file)
         score, final_seq1, final_seq2 = OverlapAlignment(match_reward, mismatch_penalty, indel_penalty, seq1, seq2)
@@ -29,23 +29,23 @@ def OverlapAlignment(match_reward: int, mismatch_penalty: int, indel_penalty: in
     path_matrix = [[{"dia": False, "ver": False, "hor": False} for j in range(len(t)+1)] for i in range(len(s)+1)]
     
     for j in range(1, len(t)+1):
-        score_matrix[0][j] = indel_penalty + score_matrix[0][j-1]
+        score_matrix[0][j] = -indel_penalty + score_matrix[0][j-1]
         path_matrix[0][j]["hor"] = True
 
     for i in range(1, len(s)+1):
-        max_score = max(indel_penalty + score_matrix[i-1][0], 0)
+        max_score = max(-indel_penalty + score_matrix[i-1][0], 0)
         score_matrix[i][0] = max_score
-        if max_score == score_matrix[i-1][0]+indel_penalty:
+        if max_score == score_matrix[i-1][0]-indel_penalty:
             path_matrix[i][0]["ver"] = True
 
     for i in range(1, len(s)+1):
         for j in range(1, len(t)+1):
-            score = mismatch_penalty
+            score = -mismatch_penalty
             if s[i-1] == t[j-1]:
                 score = match_reward
             dia_score = score_matrix[i-1][j-1] + score
-            ver_score = score_matrix[i-1][j] + indel_penalty
-            hor_score = score_matrix[i][j-1] + indel_penalty
+            ver_score = score_matrix[i-1][j] - indel_penalty
+            hor_score = score_matrix[i][j-1] - indel_penalty
 
             score_matrix[i][j] = max(dia_score, ver_score, hor_score)
             if score_matrix[i][j] == dia_score:
@@ -57,7 +57,7 @@ def OverlapAlignment(match_reward: int, mismatch_penalty: int, indel_penalty: in
     
     max_index = 0
     curr_max = score_matrix[len(s)][0]
-    for j in range(len(t)):
+    for j in range(len(t)+1):
         if score_matrix[len(s)][j] > curr_max:
             curr_max = score_matrix[len(s)][j]
             max_index = j
