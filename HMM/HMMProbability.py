@@ -36,6 +36,14 @@ def ReadFiles_HMMProb(path):
     return items[0], items[1], items[2] 
 
 def HMMProb(states: str, transition: dict[str, dict[str, float]]) -> float:
+    """
+    HMMProb: Calculates the probability of a hidden path based on a transition matrix.
+    Input:
+        states: the provided hidden path.
+        transition: The transition probabilities between states.
+    Output:
+        The probability that the given transition state occurs based on the provided transition matrix.
+    """
     prob = 1/(len(transition))
     curr_char = states[0]
     for next_char in states[1:]:

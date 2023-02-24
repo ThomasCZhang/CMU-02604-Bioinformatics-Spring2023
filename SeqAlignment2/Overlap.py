@@ -24,7 +24,20 @@ def ReadTest_Overlap(filepath:str) -> tuple[int, int, int, str, str]:
 
 def OverlapAlignment(match_reward: int, mismatch_penalty: int, indel_penalty: int,
                     s: str, t: str) -> tuple[int, str, str]:
-    
+    """
+    OverlapAlignment: Finds the best overlap alignment using dynamic programming. An overlap is when the suffix
+    of one string overlaps with the prefix of another. This function assumes that the suffix of s is aligned to the 
+    prefix of t.
+
+    Input:
+        match_reward: the score of matching chars.
+        mismatch_penalty: the penalty of mismatches.
+        indel_penalty: the penalty of indels.
+        s, t: The two sequences being aligned.
+
+    Output:
+        The score of the alignment and the aligned suffix/prefix.
+    """
     score_matrix = [[0 for j in range(len(t)+1)] for i in range(len(s)+1)]
     path_matrix = [[{"dia": False, "ver": False, "hor": False} for j in range(len(t)+1)] for i in range(len(s)+1)]
     
