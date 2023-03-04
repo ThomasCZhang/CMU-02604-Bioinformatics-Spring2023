@@ -3,7 +3,7 @@ from glob import glob
 
 def main():
     dirpath = os.path.join(os.path.dirname(__file__), "files")
-    paths = glob(os.path.join(dirpath , "Viterbi\\data*.txt"))
+    paths = glob(os.path.join(dirpath , "Viterbi\\Week*.txt"))
     for path in paths:
         output, emission_vals, state_names, transition_mm, emission_mm = ReadFiles_Viterbi(path)
         state_path = Viterbi(output, emission_vals, state_names, transition_mm, emission_mm)
@@ -42,7 +42,12 @@ def ReadFiles_Viterbi(path):
                     line_0 = line.strip().split()
                     items[idx][line_0[0]] = {}
                     for idx0, key in enumerate(keys):
-                        items[idx][line_0[0]][key] = float(line_0[idx0 + 1])
+                        if len(line_0[idx0+1].split("/")) > 1:
+                            num, denom = line_0[idx0+1].split("/")
+                            items[idx][line_0[0]][key] = float(num)/float(denom)
+                        else:
+                            items[idx][line_0[0]][key] = float(line_0[idx0 + 1])
+                        
     
     return tuple(items)
 
@@ -65,7 +70,7 @@ def Viterbi(output:str, emission_vals: list[str], state_vals: list[str], transit
 
     score_matrix = [[0 for y in output] for x in state_vals]
     for x in range(len(state_vals)):
-        score_matrix[x][0] = emission_mm[state_vals[x]][output[0]]
+        score_matrix[x][0] = emission_mm[state_vals[x]][output[0]]*transition_mm["F"][state_vals[x]]
 
     prior_dict = {}
     for x in state_vals:
@@ -98,6 +103,15 @@ def Viterbi(output:str, emission_vals: list[str], state_vals: list[str], transit
     return state_path
 
 def Backtrack(final_state: int, state_vals: list[str], path_matrix: list[list[dict[str, bool]]]):
+    """
+    Backtrack: Backtrack through a viterbi graph.
+    Input:
+        final_state: The state to start backtracking from.
+        state_vals: a list of the possible states.
+        path_matrix: A matrix that holds the path used to solve a viterbi graph.
+    Output:
+        The path taken as a string.
+    """
     state_path = state_vals[final_state]
     current_state = final_state
     i = len(path_matrix[0])-1
