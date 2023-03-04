@@ -1,11 +1,12 @@
 import os
 import numpy as np
+from typing import Iterable
 from glob import glob
 from HMMPseudoCount import ProfileHMMPseudo
 
 def main():
     dirpath = os.path.join(os.path.dirname(__file__), "files")
-    paths = glob(os.path.join(dirpath , "SeqAlign\\input_1.txt"))
+    paths = glob(os.path.join(dirpath , "SeqAlign\\data*.txt"))
     for path in paths:
         x, threshold, pseudocount, alphabet, alignment= ReadProfileHMM(path)
         answer = SeqAlignHMM(x, threshold, pseudocount, alphabet, alignment)
@@ -53,8 +54,8 @@ def SeqAlignHMM(x: str, threshold: float, pseudocount: float, alphabet:list[str]
     """
     transition, emission = ProfileHMMPseudo(threshold, pseudocount, alphabet, alignment)
     # Taking the log of both transition and emission probabilities so we can add instead of multiply.
-    transition = np.log(transition) 
-    emission = np.log(emission)
+    transition = np.log(transition, out = -np.inf*np.ones_like(transition), where= transition!= 0) 
+    emission = np.log(emission, out = -np.inf*np.ones_like(emission), where = emission != 0)
 
     # Alphabet dictionary to keep track of column index for each letter in emissions.
     alphabet_dict = {} 
@@ -62,76 +63,34 @@ def SeqAlignHMM(x: str, threshold: float, pseudocount: float, alphabet:list[str]
         alphabet_dict[key] = idx
 
     num_states = transition.shape[0]
-    score_matrix = np.zeros((num_states-2, len(x)+1))
+    score_matrix = np.ones((num_states-2, len(x)+1))*(-np.inf)
     path_matrix = np.zeros((num_states-2, len(x)+1, 2))
 
-    # score_matrix[0,0] = 1 # This is needed if we are multiplying. 
+    score_matrix[0,0] = 0 
 
-    # Fill in first column 
-    for row in range(1, score_matrix.shape[0]):
-        if row%3 == 2:
-            prev_row = row-3
-            if prev_row < 0:
-                prev_row += 1
-            score_matrix[row, 0] = transition[row-2, row+1]+score_matrix[prev_row, 0]
-            path_matrix[row, 0, :] = [prev_row, 0]
-        else:
-            score_matrix[row, 0] = -np.inf
-    
-    # Fill in first three rows because they behave differently
-    for col in range(1, score_matrix.shape[1]):
-        prev_state = 1
-        if col == 1:
-            prev_state = 0
-        
-        score_matrix[0, col] = emission[1, alphabet_dict[x[col-1]]] + transition[prev_state, 1] + score_matrix[0, col-1]
-        path_matrix[0, col, :] = [0, col-1]
+    switch_dict = {0: InsertNode, 1: MatchNode, 2: DeleteNode}
 
-        score_matrix[1, col] = emission[2, alphabet_dict[x[col-1]]] + transition[prev_state, 2] + score_matrix[0, col-1]
-        path_matrix[1, col, :] = [0, col-1]
-
-        score_matrix[2, col] = transition[1, 3] + score_matrix[0, col]
-        path_matrix[2, col, :] = [0, col]
-
-
-    for col in range(1, score_matrix.shape[1]): # Fill in column by column
-        for row in range(3, score_matrix.shape[0]):
-            if row%3 == 0: # Insert node
-                if col > 3 and row > 14:
-                    print("Hi")
-                m_score = emission[row+1, alphabet_dict[x[col-1]]] + transition[row-1, row+1] + score_matrix[row-2, col-1]
-                d_score = emission[row+1, alphabet_dict[x[col-1]]] + transition[row, row+1] + score_matrix[row-1, col-1]
-                i_score = emission[row+1, alphabet_dict[x[col-1]]] + transition[row+1, row+1] + score_matrix[row, col-1]
-                score_matrix[row, col] = max(m_score, d_score, i_score)
-                if score_matrix[row, col] == m_score:
-                    path_matrix[row, col, :] = [row-2, col-1]
-                elif score_matrix[row, col] == d_score:
-                    path_matrix[row, col, :] = [row-1, col-1]
-                elif score_matrix[row, col] == i_score:
-                    path_matrix[row, col, :] = [row, col-1]
-
-            elif row%3 == 1: # Match Node
-                m_score = emission[row+1, alphabet_dict[x[col-1]]] + transition[row-2, row+1] + score_matrix[row-3, col-1]
-                d_score = emission[row+1, alphabet_dict[x[col-1]]] + transition[row-1, row+1] + score_matrix[row-2, col-1]
-                i_score = emission[row+1, alphabet_dict[x[col-1]]] + transition[row, row+1] + score_matrix[row-1, col-1]
-                score_matrix[row, col] = max(m_score, d_score, i_score)
-                if score_matrix[row, col] == m_score:
-                    path_matrix[row, col, :] = [row-3, col-1]
-                elif score_matrix[row, col] == d_score:
-                    path_matrix[row, col, :] = [row-2, col-1]
-                elif score_matrix[row, col] == i_score:
-                    path_matrix[row, col, :] = [row-1, col-1]
-            elif row%3 == 2: # Delete node
-                m_score = transition[row-3, row] + score_matrix[row-4, col]
-                d_score = transition[row-3, row] + score_matrix[row-3, col]
-                i_score = transition[row-3, row] + score_matrix[row-2, col]
-                score_matrix[row, col] = max(m_score, d_score, i_score)
-                if score_matrix[row, col] == m_score:
-                    path_matrix[row, col, :] = [row-4, col]
-                elif score_matrix[row, col] == d_score:
-                    path_matrix[row, col, :] = [row-3, col]
-                elif score_matrix[row, col] == i_score:
-                    path_matrix[row, col, :] = [row-2, col]
+    for col in range(score_matrix.shape[1]): # Fill in column by column
+        for row in range(score_matrix.shape[0]):
+            if row == 0 and col == 0:
+                # Checking Child Delete
+                if row+2 < score_matrix.shape[0] and \
+                score_matrix[row, col]+transition[row, row+3] > score_matrix[row+2, col]:
+                    score_matrix[row+2, col] = score_matrix[row, col]+transition[row, row+3]
+                    path_matrix[row+2,col] = [row,col]
+                # Checking Child Insert    
+                if  col+1 < score_matrix.shape[1] and \
+                score_matrix[row, col]+transition[row, row+1]+emission[row+1, alphabet_dict[x[col]]] > score_matrix[row, col+1]:
+                    score_matrix[row, col+1] = score_matrix[row, col]+transition[row, row+1]+emission[row+1, alphabet_dict[x[col]]]                               
+                    path_matrix[row,col+1] = [row,col]
+                # Checking child match
+                if row+1 < score_matrix.shape[0] and col+1 < score_matrix.shape[1] and\
+                score_matrix[row, col] + transition[row, row+2] + emission[row+2, alphabet_dict[x[col]]] > score_matrix[row+1, col+1]:
+                    score_matrix[row+1, col+1] = score_matrix[row, col] + transition[row, row+2] + emission[row+2, alphabet_dict[x[col]]]
+                    path_matrix[row+1,col+1] = [row,col]
+            else:
+                node_func = switch_dict[int(row%3)]
+                node_func(row, col, x, score_matrix, path_matrix, transition, emission, alphabet_dict)
 
     max_score = -np.inf
     start_pos = [0, 0]
@@ -144,9 +103,120 @@ def SeqAlignHMM(x: str, threshold: float, pseudocount: float, alphabet:list[str]
     backtrack_path = backtrack(path_matrix, start_pos)
     return backtrack_path
 
+def MatchNode(row: int, col:int, x: str, score_matrix: np.ndarray[float], path_matrix: np.ndarray[int],
+               transition: np.ndarray[float], emission: np.ndarray[float], alphabet_dict: dict[str, int]):
+    """
+    MatchNode: Updates the children of a match node.
+    Input:
+        row, col: row and col indicies of node being evaluated.
+        x: the string being evaluated.
+        score_matrix: a score_matrix used for DP.
+        path_matrix: a path matrix used for backtracking.
+        transition: Transition matrix.
+        emission: emission matrix.
+    Output:
+        None
+    """
+    # Checking Child Delete
+    if TwoDimInBounds(row+4, col, score_matrix.shape) and\
+    score_matrix[row,col]+transition[row+1, row+5]>score_matrix[row+4,col]:
+        score_matrix[row+4,col] = score_matrix[row,col]+transition[row+1, row+5]
+        path_matrix[row+4,col] = [row,col]
+    # Checking Child Insert
+    if TwoDimInBounds(row+2, col+1, score_matrix.shape) and\
+    score_matrix[row,col]+transition[row+1,row+3]+emission[row+3, alphabet_dict[x[col]]] > score_matrix[row+2, col+1]:
+        score_matrix[row+2, col+1] = score_matrix[row,col]+transition[row+1,row+3]+emission[row+3, alphabet_dict[x[col]]]
+        path_matrix[row+2,col+1] = [row,col]
+    # Checking Child Match
+    if TwoDimInBounds(row+3, col+1, score_matrix.shape) and\
+    score_matrix[row,col]+transition[row+1, row+4]+emission[row+4, alphabet_dict[x[col]]] > score_matrix[row+3, col+1]:
+        score_matrix[row+3, col+1] = score_matrix[row,col]+transition[row+1, row+4]+emission[row+4, alphabet_dict[x[col]]]
+        path_matrix[row+3,col+1] = [row,col]
+    
+def InsertNode(row: int, col:int, x: str, score_matrix: np.ndarray[float], path_matrix: np.ndarray[int],
+               transition: np.ndarray[float], emission: np.ndarray[float], alphabet_dict: dict[str, int]):
+    """
+    InsertNode: Updates the children of a match node.
+    Input:
+        row, col: row and col indicies of node being evaluated.
+        x: the string being evaluated.
+        score_matrix: a score_matrix used for DP.
+        path_matrix: a path matrix used for backtracking.
+        transition: Transition matrix.
+        emission: emission matrix.
+    Output:
+        None
+    """
+    # Checking Child Delete
+    if TwoDimInBounds(row+2, col, score_matrix.shape) and \
+    score_matrix[row, col]+transition[row+1, row+3] > score_matrix[row+2, col]:
+        score_matrix[row+2, col] = score_matrix[row, col]+transition[row+1, row+3]
+        path_matrix[row+2,col] = [row,col]
+    # Checking Child Insert    
+    if TwoDimInBounds(row, col+1, score_matrix.shape) and \
+    score_matrix[row, col]+transition[row+1, row+1]+emission[row+1, alphabet_dict[x[col]]] > score_matrix[row, col+1]:
+        score_matrix[row, col+1] = score_matrix[row, col]+transition[row+1, row+1]+emission[row+1, alphabet_dict[x[col]]]                               
+        path_matrix[row,col+1] = [row,col]
+    # Checking child match
+    if TwoDimInBounds(row+1, col+2, score_matrix.shape) and\
+    score_matrix[row, col] + transition[row+1, row+2] + emission[row+2, alphabet_dict[x[col]]] > score_matrix[row+1, col+1]:
+        score_matrix[row+1, col+1] = score_matrix[row, col] + transition[row+1, row+2] + emission[row+2, alphabet_dict[x[col]]]
+        path_matrix[row+1,col+1] = [row,col]
+
+
+def DeleteNode(row: int, col:int, x: str, score_matrix: np.ndarray[float], path_matrix: np.ndarray[int],
+               transition: np.ndarray[float], emission: np.ndarray[float], alphabet_dict: dict[str, int]):
+    """
+    DeleteNode: Updates the children of a match node.
+    Input:
+        row, col: row and col indicies of node being evaluated.
+        x: the string being evaluated.
+        score_matrix: a score_matrix used for DP.
+        path_matrix: a path matrix used for backtracking.
+        transition: Transition matrix.
+        emission: emission matrix.
+    Output:
+        None
+    """
+    # Checking Child Delete
+    if TwoDimInBounds(row+3, col, score_matrix.shape) and \
+    score_matrix[row,col] + transition[row+1, row+4]>score_matrix[row+3,col]:
+        score_matrix[row+3, col] = score_matrix[row,col] + transition[row+1, row+4]
+        path_matrix[row+3,col] = [row,col]
+    # Checking Child Insert
+    if TwoDimInBounds(row+1, col+1, score_matrix.shape) and\
+    score_matrix[row,col] + transition[row+1, row+2] + emission[row+2, alphabet_dict[x[col]]] > score_matrix[row+1, col+1]:
+        score_matrix[row+1, col+1] = score_matrix[row,col] + transition[row+1, row+2] + emission[row+2, alphabet_dict[x[col]]]
+        path_matrix[row+1, col+1] = [row,col]
+    # Checking Child Match
+    if TwoDimInBounds(row+2, col+1, score_matrix.shape) and\
+    score_matrix[row,col] +transition[row+1, row+3] + emission[row+3, alphabet_dict[x[col]]] > score_matrix[row+2, col+1]:
+        score_matrix[row+2, col+1] = score_matrix[row,col] +transition[row+1, row+3] + emission[row+3, alphabet_dict[x[col]]]
+        path_matrix[row+2,col+1] = [row,col]
+    pass
+
+def TwoDimInBounds(row: int, col: int, shape: Iterable[int]) -> bool:
+    """
+    TwoDimInBounds: Determines if a given row and column are in bounds a two dimensional matrix.
+    Input:
+        row: the input row
+        col: the input col
+        shape: The shape of the matrix.
+    Output:
+        True if row and col are in bounds, false otherwise.
+    """
+    if row < 0 or row >= shape[0] or col < 0 or col >= shape[1] :
+        return False
+    return True
+
 def backtrack(path_matrix: np.ndarray[int], start_position = list[int, int]) -> list[str]:
     """
     Backtracks through the viterbi HMM graph from a given start position using a path matrix.
+    Input:
+        path_matrix: The path_matrix that will be used for backtracking.
+        start_position: The starting position from which to backtrack.
+    Output:
+        A list of strings corresponding to the path.
     """
     row, col = start_position
     path = []
@@ -161,10 +231,8 @@ def backtrack(path_matrix: np.ndarray[int], start_position = list[int, int]) -> 
         state = state_letter + str(state_num)
         path = [state] + path
         row, col = path_matrix[int(row), int(col)]
-    
     return path
-
-    
+   
 
 if __name__ == "__main__":
     main()
