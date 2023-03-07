@@ -68,23 +68,24 @@ def SeqAlignHMM(x: str, threshold: float, pseudocount: float, alphabet:list[str]
 
     score_matrix[0,0] = 0 
 
-    switch_dict = {0: InsertNode, 1: MatchNode, 2: DeleteNode}
+    # Dictionary to hold functions so they can be called efficiently. (Instead of having a bunch of if statements)
+    switch_dict = {0: InsertNode, 1: MatchNode, 2: DeleteNode} 
 
     for col in range(score_matrix.shape[1]): # Fill in column by column
         for row in range(score_matrix.shape[0]):
-            if row == 0 and col == 0:
+            if row == 0 and col == 0: # Must handle first position differently than the rest.
                 # Checking Child Delete
-                if row+2 < score_matrix.shape[0] and \
+                if TwoDimInBounds(row+2, col, score_matrix.shape) and \
                 score_matrix[row, col]+transition[row, row+3] > score_matrix[row+2, col]:
                     score_matrix[row+2, col] = score_matrix[row, col]+transition[row, row+3]
                     path_matrix[row+2,col] = [row,col]
                 # Checking Child Insert    
-                if  col+1 < score_matrix.shape[1] and \
+                if TwoDimInBounds(row, col+1, score_matrix.shape) and \
                 score_matrix[row, col]+transition[row, row+1]+emission[row+1, alphabet_dict[x[col]]] > score_matrix[row, col+1]:
                     score_matrix[row, col+1] = score_matrix[row, col]+transition[row, row+1]+emission[row+1, alphabet_dict[x[col]]]                               
                     path_matrix[row,col+1] = [row,col]
                 # Checking child match
-                if row+1 < score_matrix.shape[0] and col+1 < score_matrix.shape[1] and\
+                if TwoDimInBounds(row+1, col+1, score_matrix.shape) and\
                 score_matrix[row, col] + transition[row, row+2] + emission[row+2, alphabet_dict[x[col]]] > score_matrix[row+1, col+1]:
                     score_matrix[row+1, col+1] = score_matrix[row, col] + transition[row, row+2] + emission[row+2, alphabet_dict[x[col]]]
                     path_matrix[row+1,col+1] = [row,col]
@@ -92,6 +93,7 @@ def SeqAlignHMM(x: str, threshold: float, pseudocount: float, alphabet:list[str]
                 node_func = switch_dict[int(row%3)]
                 node_func(row, col, x, score_matrix, path_matrix, transition, emission, alphabet_dict)
 
+    # Find the ending node of the max score path.
     max_score = -np.inf
     start_pos = [0, 0]
     for idx in range(1,4):
@@ -209,7 +211,7 @@ def TwoDimInBounds(row: int, col: int, shape: Iterable[int]) -> bool:
         return False
     return True
 
-def backtrack(path_matrix: np.ndarray[int], start_position = list[int, int]) -> list[str]:
+def backtrack(path_matrix: np.ndarray[int], start_position: list[int]) -> list[str]:
     """
     Backtracks through the viterbi HMM graph from a given start position using a path matrix.
     Input:
