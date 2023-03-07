@@ -4,8 +4,8 @@ from typing import Iterable
 
 def main():
     dirpath = os.path.join(os.path.dirname(__file__), "inputs\\TwoBreakDistance")
-    filepath = os.path.join(dirpath, "dataset_876232_4.txt")
-    genome1, genome2 = ReadData_TwoBreakDistance(filepath)
+    filepath = os.path.join(dirpath, "input_0.txt")
+    genome1, genome2 = ReadData_TwoGenomes(filepath)
     answer = TwoBreakDist(genome1, genome2)
 
     answerpath = os.path.join(os.path.dirname(__file__), "answer.txt")
@@ -13,7 +13,7 @@ def main():
         f.write(str(answer))
 
 
-def ReadData_TwoBreakDistance(filepath):
+def ReadData_TwoGenomes(filepath):
     genomes = []
     with open(filepath) as f:
         for line in f:
@@ -22,12 +22,12 @@ def ReadData_TwoBreakDistance(filepath):
             line = list(filter(None, line))
             for chromasome in line:
                 chromasome = chromasome.split()
-                sequence = tuple([int(x) for x in chromasome])
+                sequence = [int(x) for x in chromasome]
                 genome.append(sequence)
             genomes.append(genome)
     return tuple(genomes)
 
-def TwoBreakDist(p: list[tuple[int]],q: list[tuple[int]]) -> int:
+def TwoBreakDist(p: list[list[int]],q: list[list[int]]) -> int:
     """
     TwoBreakDist: Determines the two break distance between two genome synteny block sequences.
     Input:
@@ -37,13 +37,13 @@ def TwoBreakDist(p: list[tuple[int]],q: list[tuple[int]]) -> int:
     """
     adj_dict = GenerateAdjacencyDict([p ,q])
     num_blocks = int(len(adj_dict)/2)
-    keys = list(adj_dict.keys())
+    keys = set(adj_dict.keys())
     num_cycles = 0
-    curr_vertex = keys[0]
+    curr_vertex = list(keys)[0]
 
     while len(adj_dict) > 0:
         if curr_vertex not in adj_dict:
-            curr_vertex = keys[0]
+            curr_vertex = list(keys)[0]
 
         next_vertex = adj_dict[curr_vertex][0]
         
@@ -58,7 +58,7 @@ def TwoBreakDist(p: list[tuple[int]],q: list[tuple[int]]) -> int:
         
     return num_blocks - num_cycles
 
-def GenerateAdjacencyDict(genomes: Iterable[list[tuple[int]]]) -> dict[int, list[int]]:
+def GenerateAdjacencyDict(genomes: Iterable[list[list[int]]]) -> dict[int, list[int]]:
     """
     Generates the adjacency lists for a list of sequences of synteny blocks.
     Input:
@@ -72,7 +72,7 @@ def GenerateAdjacencyDict(genomes: Iterable[list[tuple[int]]]) -> dict[int, list
         CombineDict(adj_dict, new_adj_dict)
     return adj_dict
 
-def GenomeAdjacencyList(p: list[tuple[int]]) -> dict[int, list[int]]:
+def GenomeAdjacencyList(p: list[list[int]]) -> dict[int, list[int]]:
     """
     GenomeAdjacnecyList: Generates an adjacency list for a genomes. Each genome is represented as a sequence
     of circular chromasomes. Chromsomes are a sequence synteny blocks.
@@ -89,7 +89,7 @@ def GenomeAdjacencyList(p: list[tuple[int]]) -> dict[int, list[int]]:
         CombineDict(adj_dict, new_dict)
     return adj_dict
 
-def ChromasomeAdjacencyList(p: tuple[int]) -> dict[int, list[int]]:
+def ChromasomeAdjacencyList(p: list[int]) -> dict[int, list[int]]:
     """
     Chromasome: Generates an adjacency list for circular chromasomes. Each genome is represented as a sequence
     of synteny blocks.
