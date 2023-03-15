@@ -24,7 +24,15 @@ def ReadAdjacencyList(filepath):
                 adjacency_dict[key] = [row]
     return num_leaves, adjacency_dict
 
-def LeafDistance(adj_dict: dict[int, list[list[int]]]):
+def LeafDistance(adj_dict: dict[int, list[list[int]]]) -> np.ndarray[int]:
+    """
+    LeafDistance: Takes an tree represented as an adjacency dictionary and returns a matrix that contains the distance
+    between the leaves of the tree.
+    Input:
+        adj_dict: The tree represented as an adjacency dictionary.
+    Output:
+        A matrix that contains the distances between leaves.
+    """
     leaves = GetLeaves(adj_dict)
     visited = set()
     path = dict()

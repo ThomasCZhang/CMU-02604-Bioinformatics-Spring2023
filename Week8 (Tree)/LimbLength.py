@@ -3,7 +3,7 @@ import numpy as np
 
 def main():
     dirpath = os.path.dirname(__file__)
-    filepath = os.path.join(dirpath,"inputs", "LimbLength", "input_1.txt")
+    filepath = os.path.join(dirpath,"inputs", "LimbLength", "input_2.txt")
     num_leaves,target_leaf,distance_matrix = ReadDistanceMatrix_LimbLength(filepath)
     # print(f"Number of Leaves: {num_leaves}\nTarget Leaf: {target_leaf}\nDistance Matrix:{distance_matrix.shape}\n {distance_matrix}")
     answer = LimbLength(target_leaf, distance_matrix)
