@@ -3,9 +3,9 @@ import numpy as np
 
 def main():
     dirpath = os.path.dirname(__file__)
-    filepath = os.path.join(dirpath, "inputs", "NeighborJoining", "dataset_876249_7.txt")
+    filepath = os.path.join(dirpath, "inputs", "NeighborJoining", "input_2.txt")
     num_leaves, distance_matrix = ReadData_NeighborJoining(filepath)
-    answer = NeighborJoining(distance_matrix)
+    answer = NeighborJoining(distance_matrix) 
 
     answer_path = os.path.join(dirpath, "answer.txt")
     with open(answer_path, "w") as f:
@@ -125,6 +125,7 @@ def ConstructNeighborJoiningMatrix(distance_matrix: np.ndarray) -> np.ndarray:
             d_star[i, j] = (
                 (n - 2) * distance_matrix[i, j] - np.sum(distance_matrix[i, :]) - np.sum(distance_matrix[j, :])
             )
+            d_star[j, i] = d_star[i, j]
     return d_star
 
 
