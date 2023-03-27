@@ -16,7 +16,9 @@ class Tree:
         vertex_degree = {}
         for key in adjacency_dict:
             vertex_degree[key] = len(adjacency_dict[key])
-        
+            if len(adjacency_dict[key]) == 2:
+                self.vertices[key] = Vertex(key)
+                self.root = self.vertices[key]
         leaf_degree = 1
 
         while len(adjacency_dict) > 0:
@@ -27,13 +29,16 @@ class Tree:
                     leaf_verticies.append(key)
 
             # If tree is rooted, the root will have degree 0 once all the children are processed.
+            # So there will be no verticies with degree 1 left.
             if len(leaf_verticies) == 0: 
-                self.root = self.vertices[list(adjacency_dict.keys())[0]]
                 break
 
             for current_name in leaf_verticies:
+                if current_name is self.root.sequence:
+                    continue
                 if len(adjacency_dict[current_name]) == 0:
                     raise NoNeighbors("Current node has no neighbors in the adjacency list.")
+
                 parent_name = adjacency_dict[current_name][0] # There should be only 1 neighbor if key is a leaf.
 
                 if current_name not in self.vertices:
@@ -65,7 +70,7 @@ class Tree:
         """
         score = 0
         for v in self.vertices.values():
-            for _, weight in v.children:
+            for _, weight in v.parent:
                 score += weight
         return score
         

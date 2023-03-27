@@ -4,9 +4,9 @@ from graph import *
 
 def main():
     dirpath = os.path.dirname(__file__)
-    filepath = os.path.join(dirpath, "inputs", "SimpleParsimony", "input_0.txt")
+    filepath = os.path.join(dirpath, "inputs", "SimpleParsimony", "dataset_876251_10.txt")
     _, adjacency_dict = ReadData_SmallParsimony(filepath)
-    SmallParsimony(adjacency_dict)
+    t = SmallParsimony(adjacency_dict)
 
     answerpath = os.path.join(dirpath, "answer.txt")
     with open(answerpath, 'w') as f:
@@ -36,7 +36,7 @@ def ReadData_SmallParsimony(filepath):
                 
     return num_leaves, adjacency_dict
 
-def SmallParsimony(adjacency_dict: dict[str, str]):
+def SmallParsimony(adjacency_dict: dict[str, list[str]]) -> Tree:
     """
     Solves the small parsimony problem on a tree. Leaves of the tree have DNA sequences.
     Input:
@@ -60,6 +60,7 @@ def SmallParsimony(adjacency_dict: dict[str, str]):
     UpdateTreeRootSequences(t)
     UpdateInternalTreeSequences(t, leaves)
     UpdateTreeEdgeWeights(t)
+    return t
     
 def UpdateTreeEdgeWeights(t: Tree):
     """
