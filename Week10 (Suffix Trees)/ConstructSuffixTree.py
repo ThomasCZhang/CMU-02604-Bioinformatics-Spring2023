@@ -6,26 +6,32 @@ def main():
     filepath = os.path.join(dirname, "inputs", "SuffixTree", "dataset_876287_4.txt")
     with open(filepath) as f:
         word = f.readline().strip()
-    word_list = ConstructSuffixTree(word)
+    suffix_tree = ConstructSuffixTree(word)
 
-    # answerpath = os.path.join(dirname, "answer.txt")
-    # with open(answerpath, 'w') as f:
-    #     for idx, word in enumerate(word_list):
-    #         if idx != 0:
-    #             f.write(' ')
-    #         f.write(word)
+    answerpath = os.path.join(dirname, "answer.txt")
+    with open(answerpath, 'w') as f:
+        for idx, key in enumerate(suffix_tree):
+            for idx2, edge in enumerate(suffix_tree[key]):
+                if idx != 0 or idx2 != 0:
+                    f.write(' ')
+                f.write(edge[1])
 
 
 def ConstructSuffixTree(word: str) -> dict[int, list[list[int]]]:
+    """
+    Constructs a suffix tree by first creating the suffix trie then compressing the edges down.
+    Input:
+        word: The word being used to construct a suffix tree.
+    """
     suffixes = [word[i:] for i in range(len(word))]
     trie = ConstructTrie(suffixes)
-    word_list = TraverseTrie(trie, 0, "")
-    # return sorted(word_list)
+    CompressTrie(trie, 0)
+    return trie
 
 
-def TraverseTrie(
-    t: dict[int, list[list[int]]], current_node: int, current_string: str = None
-) -> list[str]:
+def CompressTrie(
+    t: dict[int, list[list[int]]], current_node: int, current_edge: list[int | str] = None
+):
     """
     Traverse down a suffix trie and get a list of "words" that represent non-branching chains of nodes.
     Input:
@@ -33,21 +39,16 @@ def TraverseTrie(
         current_node: the current node
         current_string: the current growing word.
     """
-    word_list = []
-    if current_string is None:
-        current_string = ""
-    
     if len(t[current_node]) == 1:
         edge = t[current_node][0]
-        current_string += edge[1]
-        word_list.extend(TraverseTrie(t, edge[0], current_string))
+        current_edge[0] = edge[0]
+        current_edge[1] += edge[1]
+        CompressTrie(t, edge[0], current_edge)
+        del t[current_node]
     else:
-        if len(current_string) > 0:
-            word_list.append(current_string)
         for edge in t[current_node]:
-            word_list.extend(TraverseTrie(t, edge[0], edge[1]))
+            CompressTrie(t, edge[0], edge)
 
-    return word_list
 
 
 if __name__ == "__main__":

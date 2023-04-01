@@ -49,7 +49,7 @@ def GrowTrie(new_word: str, t: dict[int, list[list[int, str]]]):
             break
     
     new_node = len(t)
-    for letter in new_word[first_unmatched_idx:]:
+    for i, letter in enumerate(new_word[first_unmatched_idx:]):
         t[current_node].append([new_node, letter])
         t[new_node] = []
         current_node = new_node
