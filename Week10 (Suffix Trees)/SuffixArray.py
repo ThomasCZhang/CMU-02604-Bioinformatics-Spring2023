@@ -2,7 +2,7 @@ import os
 
 def main():
     dirname = os.path.dirname(__file__)
-    filepath = os.path.join(dirname, "inputs", "suffixarray", "input_0.txt")
+    filepath = os.path.join(dirname, "inputs", "suffixarray", "input_1.txt")
     s = ReadString(filepath)
     answer = SuffixArray(s)
 
@@ -24,8 +24,6 @@ def SuffixArray(s: str):
     suffixes = [(i,s[i:]) for i in range(len(s))]
     suffixes = sorted(suffixes, key=lambda x: x[1])
     indexes = [x[0] for x in suffixes]
-    for i in suffixes:
-        print(i)
     return indexes
 
 if __name__ == "__main__":
