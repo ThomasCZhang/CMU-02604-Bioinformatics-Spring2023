@@ -2,7 +2,7 @@ import os
 
 def main():
     dirpath = os.path.dirname(__file__)
-    filepath = os.path.join(dirpath, "inputs", "bwt", "input_0.txt")
+    filepath = os.path.join(dirpath, "inputs", "bwt", "dataset_876289_5.txt")
     word = ReadData(filepath)
     answer = bwt(word)
 

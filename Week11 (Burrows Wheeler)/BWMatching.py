@@ -1,5 +1,5 @@
 import os
-from bwt_decode import *
+from BWTDecode import *
 
 def main():
     dirpath = os.path.dirname(__file__)
@@ -25,15 +25,15 @@ def bwt_multi_matching(word: str, patterns: list[str]) -> list[list[int]]:
     Output:
         A list of indicies indicating the starting location of where each pattern can be found in word.
     """
-    ranks = get_ranks(word)
-    idx_dict = get_char_positions(word)
+    ranks = GetRanks(word)
+    idx_dict = GetCharPositions(word)
     matches = [[] for _ in patterns]
     for i, pattern in enumerate(patterns):
         matches[i] = bwt_matching(word, pattern, ranks, idx_dict)
     
     return matches
 
-def bwt_matching(word: str, pattern: str, ranks: list[int] = None, idx_dict: dict[int, dict[int, int]] = None) -> list[int]:
+def bwt_matching(word: str, pattern: str, ranks: list[int] = None, idx_dict: dict[str, dict[int, int]] = None) -> list[int]:
     """
     Finds all the locations of a pattern in a bwt encoded string.
     Input:
@@ -43,9 +43,9 @@ def bwt_matching(word: str, pattern: str, ranks: list[int] = None, idx_dict: dic
         the indicies of the starting location of pattern in word.
     """
     if ranks is None:
-        ranks = get_ranks(word)
+        ranks = GetRanks(word)
     if idx_dict is None:
-        idx_dict = get_char_positions(word)
+        idx_dict = GetCharPositions(word)
     
     locations = []
     top_idx = ranks[pattern[-1]]

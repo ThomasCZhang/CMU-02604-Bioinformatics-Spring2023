@@ -5,21 +5,21 @@ def main():
     filepath = os.path.join(dirpath, "inputs", "bwt_decode", "input_0.txt")
     with open(filepath) as f:
         word = f.readline().strip()
-    answer = bwt_decode(word)
+    answer = BWTDecode(word)
     
     answerpath = os.path.join(dirpath, "answer.txt")
     with open(answerpath, "w") as f:
         f.write(answer)
 
 
-def bwt_decode(word: str) -> str:
+def BWTDecode(word: str) -> str:
     """
     Decodes a Burrows-Wheeler encoded word.
     Input:
         word: The Burrows-Wheeler encoded word.
     """
-    ranks = get_ranks(word)
-    idx_dict = get_char_positions(word)
+    ranks = GetRanks(word)
+    idx_dict = GetCharPositions(word)
     decoded = "$"
     next_idx = 0
     for _ in range(len(word)-1):
@@ -30,7 +30,7 @@ def bwt_decode(word: str) -> str:
     return decoded
     
 
-def get_char_positions(word: str) -> dict[str, dict[int, int]]:
+def GetCharPositions(word: str) -> dict[str, dict[int, int]]:
     """
     gets the indicies that each unique character in a word appears at.
     Input:
@@ -45,7 +45,7 @@ def get_char_positions(word: str) -> dict[str, dict[int, int]]:
             char_idx_dict[letter] = {i: 0}
     return char_idx_dict
 
-def get_ranks(word: str) -> dict[str, int]:
+def GetRanks(word: str) -> dict[str, int]:
     """
     Determines the rank of each character in word. The rank of a character is the number of times characters that are 
     "smaller" than that character appear in the word. A "smaller" character, is a character that occurs earlier
@@ -55,7 +55,7 @@ def get_ranks(word: str) -> dict[str, int]:
     Output:
         The rank of each unique character in word stored in a dictionary.
     """
-    letter_counts = count_letters(word)
+    letter_counts = CountLetters(word)
     sorted_chars = sorted(letter_counts.keys())
     rank = {}
     total = 0
@@ -64,7 +64,7 @@ def get_ranks(word: str) -> dict[str, int]:
         total += letter_counts[char]
     return rank
 
-def count_letters(word: str) -> dict[str, int]:
+def CountLetters(word: str) -> dict[str, int]:
     """
     Counts the number of times a character occurs in word.
     Input:
