@@ -34,7 +34,11 @@ def GetCharPositions(word: str) -> dict[str, dict[int, int]]:
     """
     gets the indicies that each unique character in a word appears at.
     Input:
-        word: The word being analyzed
+        word: The word being analyzed. (BW-transformed word)
+    Output:
+        A dictionary where the key is a character of the alphabet. The values are dictionaries of integers to
+        integers. The inner dictionary key is the position of the alphabet letter, the inner dictionary value
+        is the number of times that character has appeared until that position.
     """
     char_idx_dict = {}
     for i, letter in enumerate(word):
@@ -51,7 +55,7 @@ def GetRanks(word: str) -> dict[str, int]:
     "smaller" than that character appear in the word. A "smaller" character, is a character that occurs earlier
     when ordered lexicographically.
     Input:
-        word: the word being analyzed.
+        word: (BW-transformed word) The word being analyzed.
     Output:
         The rank of each unique character in word stored in a dictionary.
     """
